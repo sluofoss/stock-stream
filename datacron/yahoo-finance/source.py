@@ -33,11 +33,27 @@ class source:
 
 
 if __name__ == "__main__":
+    import os
+
+    curr_path = os.path.abspath(os.path.dirname(__file__))
     # s = source('MSFT', '1m')
-    s = source(["BTC-AUD", "MSFT"], "1m")
     # using list for history must have multiple
-    with open("config.yml", "r") as file:
+    with open(os.path.join(curr_path, "symbols.yml"), "r") as file:
         symbols = yaml.safe_load(file)
-    for symbol in symbols["asx200"]:
+    print("finished loading symbols")
+    data_store = {}
+    except_store = {}
+    for i, symbol in enumerate(symbols["asx200"]):
         s = source(symbol)
-        s.getLatestDayData()
+        try:
+            data_store[symbol] = s.ticker.info
+            print(i, symbol, "success")
+        except Exception as e:
+            print(i, e)
+            except_store[symbol] = str(e)
+    import json
+
+    with open(os.path.join(curr_path, "symbol_info"), "w") as file:
+        json.dump(data_store, file)
+    with open(os.path.join(curr_path, "symbol_failed"), "w") as file:
+        json.dump(except_store, file)
