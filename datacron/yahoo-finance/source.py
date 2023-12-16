@@ -18,7 +18,7 @@ class PERIOD(enum.Enum):
     max = "max"
 
 
-class source:
+class Source:
     def __init__(self, symbol: str):
         self.ticker = yf.Ticker(symbol)
 
@@ -44,7 +44,7 @@ if __name__ == "__main__":
     data_store = {}
     except_store = {}
     for i, symbol in enumerate(symbols["asx200"]):
-        s = source(symbol)
+        s = Source(symbol)
         try:
             data_store[symbol] = s.ticker.info
             print(i, symbol, "success")
