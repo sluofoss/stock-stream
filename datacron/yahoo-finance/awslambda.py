@@ -1,5 +1,6 @@
 import boto3
 
+import os
 
 import concurrent.futures
 
@@ -10,11 +11,48 @@ def check_symbol_info(symbol):
     s = Source(symbol)
     return s.ticker.info
 
-def get_symbols_data_multi(symbols, max_worker=10, print_data = False):
+def lambda_get_symbols_data_multi(event, context):
+    """takes the current date from context and get entire day of data 
+    use case when schedule on a market after market closes
+
+    Args:
+        event (_type_): _description_
+        context (_type_): _description_
+    """
+    print(event)
+    print(context)
+    import pandas as pd
+    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv") 
+    #print(df)   
+    symbols = [x+'.AX' for x in df['ASX code']]
+    
+    get_symbols_data_multi(
+        symbols,
+        max_worker=50,
+        s3_save_bucket=os.getenv('S3_STORE_BUCKET'),
+        exec_date=None #TODO: fix this
+    )
+    
+def get_symbols_data_multi(
+    symbols, 
+    max_worker=10, 
+    print_data = False, 
+    local_save_path:str=None, 
+    s3_save_bucket:str=None, 
+    exec_date=None):
+    
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
-        future_to_symbol = {
-            executor.submit(Source(symbol).getLatestDayData): symbol for symbol in symbols
-        }
+        if exec_date is None:
+            future_to_symbol = {
+                executor.submit(Source(symbol).getLatestDayData): symbol for symbol in symbols
+            }
+            import datetime 
+            exec_date = datetime.date.today()
+            print("Today's date:", exec_date)
+        else:
+            future_to_symbol = {
+                executor.submit(Source(symbol).getDataByDate()): symbol for symbol in symbols
+            }
         print("created future", flush=True)
         for future in future_to_symbol:
             symbol = future_to_symbol[future]
@@ -27,6 +65,13 @@ def get_symbols_data_multi(symbols, max_worker=10, print_data = False):
                 print("%r Symbol is successful with len %d" % (symbol, len(data)), flush=True)
                 if print_data:
                     print(data)
+                if local_save_path:
+                    data.to_parquet(
+                        f"./mocks3yfiance/{symbol}/{exec_date}.parquet.gzip",
+                        compression='gzip'
+                    )
+                if s3_save_bucket:
+                    pass
                     
 def check_symbols_info_multi(symbols, max_worker=10, print_data = False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
