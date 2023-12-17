@@ -1,3 +1,5 @@
 yfinance
 pyyaml
 boto3
+pandas
+fastparquet

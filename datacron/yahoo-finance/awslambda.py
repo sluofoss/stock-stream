@@ -30,6 +30,7 @@ def lambda_get_symbols_data_multi(event, context):
         symbols,
         max_worker=50,
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
+        local_save = True, # TODO: remove this 
         exec_date=event["time"],  # TODO: Confirm this
     )
 
@@ -38,7 +39,7 @@ def get_symbols_data_multi(
     symbols,
     max_worker=10,
     print_data=False,
-    local_save_path: str = None,
+    local_save: str = None,
     s3_save_bucket: str = None,
     exec_date=None,
 ):
@@ -70,21 +71,23 @@ def get_symbols_data_multi(
             except Exception as exc:
                 print("%r generated an exception: %s" % (symbol, exc), flush=True)
             else:
-                pass
                 print(
                     "%r Symbol is successful with len %d" % (symbol, len(data)),
                     flush=True,
                 )
                 if print_data:
                     print(data)
-                if local_save_path:
+                if local_save:
+                    if not os.path.exists(f"./mocks3yfinance/{symbol}/"):       
+                        os.makedirs(f"./mocks3yfinance/{symbol}/") 
                     data.to_parquet(
-                        f"./mocks3yfiance/{symbol}/{exec_date}.parquet.gzip",
+                        #f"./mocks3yfiance/{symbol}/{exec_date}.parquet.gzip"
+                        f"./mocks3yfinance/{symbol}/{exec_date}.parquet",
                         compression="gzip",
                     )
                 if s3_save_bucket:
                     pass
-
+                    # TODO
 
 def check_symbols_info_multi(symbols, max_worker=10, print_data=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
