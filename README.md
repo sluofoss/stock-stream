@@ -11,3 +11,13 @@ sudo ./aws/install
 # stack setup
 
 #
+
+# explain logic:
+```mermaid
+flowchart
+    subgraph lambda_caller
+        aws
+        mock
+    end
+    lambda_caller --> id1["awwlambda.getdatabydate(symbols, event_time)"] --> s3_bucket
+```

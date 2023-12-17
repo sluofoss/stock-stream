@@ -10,7 +10,7 @@ def check_symbol_info(symbol):
     s = Source(symbol)
     return s.ticker.info
 
-def get_symbols_data_multi(symbols, max_worker=10):
+def get_symbols_data_multi(symbols, max_worker=10, print_data = False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
         future_to_symbol = {
             executor.submit(Source(symbol).getLatestDayData): symbol for symbol in symbols
@@ -25,8 +25,10 @@ def get_symbols_data_multi(symbols, max_worker=10):
             else:
                 pass
                 print("%r Symbol is successful with len %d" % (symbol, len(data)), flush=True)
-                #print(data)
-def check_symbols_info_multi(symbols, max_worker=10):
+                if print_data:
+                    print(data)
+                    
+def check_symbols_info_multi(symbols, max_worker=10, print_data = False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
         future_to_symbol = {
             executor.submit(check_symbol_info, symbol): symbol for symbol in symbols
@@ -41,6 +43,9 @@ def check_symbols_info_multi(symbols, max_worker=10):
             else:
                 pass
                 print("%r Symbol is successful with len %d" % (symbol, len(data)), flush=True)
+                if print_data:
+                    print(data)
+                    
 def check_symbol_info_loop(symbols):
     data_store = {}
     except_store = {}
