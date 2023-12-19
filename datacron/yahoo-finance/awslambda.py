@@ -3,7 +3,11 @@ import os
 import concurrent.futures
 import datetime
 from source import Source
+import logging
 
+logger = logging.getLogger(__name__)
+print("what fuck", __name__)
+logger.propagate = True
 
 def check_symbol_info(symbol):
     s = Source(symbol)
@@ -18,8 +22,9 @@ def lambda_get_symbols_data_multi(event, context):
         event (_type_): _description_
         context (_type_): _description_
     """
-    print(event)
-    print(context)
+    logger.info(event)
+    logger.info(context)
+    
     import pandas as pd
 
     df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
@@ -50,7 +55,7 @@ def get_symbols_data_multi(
                 for symbol in symbols
             }
             exec_date = datetime.date.today()
-            print("Today's date:", exec_date)
+            logger.info("Today's date:", exec_date)
         else:
             next_day = datetime.datetime.strptime(
                 exec_date, "%Y-%m-%d"
@@ -61,22 +66,21 @@ def get_symbols_data_multi(
                 ): symbol
                 for symbol in symbols
             }
-            print(f"Get Data on Date {exec_date} before {next_day}")
+            logger.info(f"Get Data on Date {exec_date} before {next_day}")
 
-        print("created future", flush=True)
+        logger.info("created future", flush=True)
         for future in future_to_symbol:
             symbol = future_to_symbol[future]
             try:
                 data = future.result()
             except Exception as exc:
-                print("%r generated an exception: %s" % (symbol, exc), flush=True)
+                logger.error("%r generated an exception: %s" % (symbol, exc))
             else:
-                print(
-                    "%r Symbol is successful with len %d" % (symbol, len(data)),
-                    flush=True,
+                logger.info(
+                    "%r Symbol is successful with len %d" % (symbol, len(data))
                 )
                 if print_data:
-                    print(data)
+                    logger.info(data)
                 if local_save:
                     if not os.path.exists(f"./mocks3yfinance/{symbol}/"):       
                         os.makedirs(f"./mocks3yfinance/{symbol}/") 
@@ -94,21 +98,19 @@ def check_symbols_info_multi(symbols, max_worker=10, print_data=False):
         future_to_symbol = {
             executor.submit(check_symbol_info, symbol): symbol for symbol in symbols
         }
-        print("created future", flush=True)
+        logger.info("created future")
         for future in future_to_symbol:
             symbol = future_to_symbol[future]
             try:
                 data = future.result()
             except Exception as exc:
-                print("%r generated an exception: %s" % (symbol, exc), flush=True)
+                logger.error("%r generated an exception: %s" % (symbol, exc))
             else:
-                pass
-                print(
-                    "%r Symbol is successful with len %d" % (symbol, len(data)),
-                    flush=True,
+                logger.info(
+                    "%r Symbol is successful with len %d" % (symbol, len(data))
                 )
                 if print_data:
-                    print(data)
+                    logger.info(data)
 
 
 def check_symbol_info_loop(symbols):
@@ -118,7 +120,7 @@ def check_symbol_info_loop(symbols):
         s = Source(symbol)
         try:
             data_store[symbol] = s.ticker.info
-            print(i, symbol, "success", flush=True)
+            logger.info(f"{i}, {symbol}, success")
         except Exception as e:
-            print(i, e, flush=True)
+            logger.info(f"{i}, {e}")
             except_store[symbol] = str(e)

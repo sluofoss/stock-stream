@@ -2,7 +2,10 @@ import yfinance as yf
 import yaml
 
 import enum
+import logging
 
+logger = logging.getLogger(__name__)
+logger.propagate = True
 
 class PERIOD(enum.Enum):
     d1 = "1d"
@@ -40,16 +43,16 @@ if __name__ == "__main__":
     # using list for history must have multiple
     with open(os.path.join(curr_path, "symbols.yml"), "r") as file:
         symbols = yaml.safe_load(file)
-    print("finished loading symbols")
+    logger.info("finished loading symbols")
     data_store = {}
     except_store = {}
     for i, symbol in enumerate(symbols["asx200"]):
         s = Source(symbol)
         try:
             data_store[symbol] = s.ticker.info
-            print(i, symbol, "success")
+            logger.info(f"{i}, {symbol}, success")
         except Exception as e:
-            print(i, e)
+            logger.error(f"{i}, {e}")
             except_store[symbol] = str(e)
     import json
 
