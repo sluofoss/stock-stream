@@ -5,9 +5,10 @@ import datetime
 from source import Source
 import logging
 
-logger = logging.getLogger(__name__)
-print("what fuck", __name__)
-logger.propagate = True
+logger = logging.getLogger("lambda")
+logger.info("awslambda.PY is here!!!!")
+
+#logger.propagate = True
 
 def check_symbol_info(symbol):
     s = Source(symbol)
@@ -68,7 +69,7 @@ def get_symbols_data_multi(
             }
             logger.info(f"Get Data on Date {exec_date} before {next_day}")
 
-        logger.info("created future", flush=True)
+        logger.info("created future")
         for future in future_to_symbol:
             symbol = future_to_symbol[future]
             try:

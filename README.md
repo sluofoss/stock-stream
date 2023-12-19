@@ -25,6 +25,7 @@ flowchart
 # random cmd
 - check the file size under folder
 > ls -lRh mocks3yfiance/ > datasize.log
+https://askubuntu.com/questions/57603/how-to-list-recursive-file-sizes-of-files-and-directories-in-a-directory
 
 # yfinance 1minute asx data size estimate
 8 * 360 * 2000 * 8 * 5 * 52 = 11_980_800_000 \approxeq 12 GB
@@ -43,4 +44,6 @@ flowchart
 - todo in code
     - dump to s3 instead
 - check out whether are any of them not pulling data when there are data
+- check for correctness of all symbol code info
+    - maybe do check by using absence of data over a longer period?
 - introduce logging where all logs are put into 1 file.

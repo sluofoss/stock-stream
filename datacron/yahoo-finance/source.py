@@ -4,9 +4,9 @@ import yaml
 import enum
 import logging
 
-logger = logging.getLogger(__name__)
-logger.propagate = True
-
+logger = logging.getLogger("lambda")
+#logger.propagate = True
+logger.info("SOURCE.PY is here!!!!")
 class PERIOD(enum.Enum):
     d1 = "1d"
     d5 = "5d"
