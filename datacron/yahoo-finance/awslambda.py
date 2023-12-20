@@ -3,11 +3,24 @@ import os
 import concurrent.futures
 import datetime
 from source import Source
-import logging
+import logging.config
+import yaml
+import sys
 
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
+logger = logging.getLogger("lambda")
+with open('logconfig.yaml', 'r') as c:
+    d = yaml.safe_load(c)
+    logging.config.dictConfig(d)
 
+#logger.setLevel(logging.DEBUG)
+#h = logging.FileHandler('./lambda.log')
+#h.setLevel(logging.DEBUG)
+#logger.addHandler(h)
+#logger.info("mock started")
+
+#logging.getLogger('yfinance').addHandler(logging.FileHandler('./lambda.log'))
 #logger.propagate = True
 
 def check_symbol_info(symbol):
@@ -72,13 +85,14 @@ def get_symbols_data_multi(
         logger.info("created future")
         for future in future_to_symbol:
             symbol = future_to_symbol[future]
+            # print("symbol format is weird: ", symbol, flush=True)
             try:
                 data = future.result()
             except Exception as exc:
-                logger.error("%r generated an exception: %s" % (symbol, exc))
+                logger.error(f"{symbol} generated an exception: {exc}" )
             else:
                 logger.info(
-                    "%r Symbol is successful with len %d" % (symbol, len(data))
+                    f"{symbol} Symbol request is successful with len {len(data)}"
                 )
                 if print_data:
                     logger.info(data)
@@ -105,10 +119,10 @@ def check_symbols_info_multi(symbols, max_worker=10, print_data=False):
             try:
                 data = future.result()
             except Exception as exc:
-                logger.error("%r generated an exception: %s" % (symbol, exc))
+                logger.error(f"{symbol} generated an exception: {exc}" )
             else:
                 logger.info(
-                    "%r Symbol is successful with len %d" % (symbol, len(data))
+                    f"{symbol} Symbol request is successful with len {len(data)}"
                 )
                 if print_data:
                     logger.info(data)
