@@ -1,3 +1,17 @@
+
+# Table of content
+
+- [Table of content](#table-of-content)
+- [aws cli set up](#aws-cli-set-up)
+- [aws sso login set up](#aws-sso-login-set-up)
+- [stack setup](#stack-setup)
+- [](#)
+- [explain logic:](#explain-logic)
+- [random cmd](#random-cmd)
+- [yfinance 1minute asx data size estimate](#yfinance-1minute-asx-data-size-estimate)
+- [TODO:](#todo)
+
+
 # aws cli set up 
 
 ```

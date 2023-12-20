@@ -10,9 +10,9 @@ import sys
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
 logger = logging.getLogger("lambda")
-with open('logconfig.yaml', 'r') as c:
-    d = yaml.safe_load(c)
-    logging.config.dictConfig(d)
+with open('logconfig.yaml', 'r') as configfile:
+    configdict = yaml.safe_load(configfile)
+    logging.config.dictConfig(configdict)
 
 #logger.setLevel(logging.DEBUG)
 #h = logging.FileHandler('./lambda.log')
@@ -51,6 +51,29 @@ def lambda_get_symbols_data_multi(event, context):
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
         local_save = True, # TODO: remove this 
         exec_date=event["time"],  # TODO: Confirm this
+    )
+
+def lambda_check_symbols_info_multi(event, context):
+    """check symbol info
+    use case: validate asx symbol consistent in yfinance
+
+    Args:
+        event (_type_): _description_
+        context (_type_): _description_
+    """
+    logger.info(event)
+    logger.info(context)
+    
+    import pandas as pd
+
+    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
+    # print(df)
+    symbols = [x + ".AX" for x in df["ASX code"]]
+
+    check_symbols_info_multi(
+        symbols,
+        max_worker=50, 
+        print_data=True
     )
 
 

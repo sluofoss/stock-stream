@@ -19,8 +19,8 @@ handlers:
 loggers:
   lambda:
     level: DEBUG
-    handlers: [logfile]
+    handlers: [logfile, console]
   yfinance:
     level: ERROR
-    handlers: [logfile]
+    handlers: [logfile, console]
     
