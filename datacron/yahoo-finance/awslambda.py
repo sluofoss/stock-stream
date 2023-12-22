@@ -118,18 +118,23 @@ def get_symbols_data_multi(
                     f"{symbol} Symbol request is successful with len {len(data)}"
                 )
                 if print_data:
-                    logger.info(data)
+                    logger.info(f'{symbol}: {data}')
                 if local_save:
+                    logger.info(f'{symbol}:Saving to local')
                     if not os.path.exists(f"./mocks3yfinance/{symbol}/"):       
                         os.makedirs(f"./mocks3yfinance/{symbol}/") 
                     data.to_parquet(
-                        #f"./mocks3yfiance/{symbol}/{exec_date}.parquet.gzip"
+                        #f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
                         f"./mocks3yfinance/{symbol}/{exec_date}.parquet",
                         compression="gzip",
                     )
                 if s3_save_bucket:
-                    pass
-                    # TODO
+                    logger.info(f'{symbol}: Saving to s3')
+                    data.to_parquet(
+                        #f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
+                        f"s3://{s3_save_bucket}/yfinance/min/{symbol}/{exec_date}.parquet",
+                        compression="gzip",
+                    )
 
 def check_symbols_info_multi(symbols, max_worker=10, print_data=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
