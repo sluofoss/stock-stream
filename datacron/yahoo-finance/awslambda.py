@@ -33,8 +33,8 @@ def lambda_get_symbols_data_multi(event, context):
         event (_type_): _description_
         context (_type_): _description_
     """
-    logger.info(event)
-    logger.info(context)
+    logger.info(f'event:{event}')
+    logger.info(f'context:{context}')
 
     import pandas as pd
 
@@ -56,7 +56,7 @@ def lambda_get_symbols_data_multi(event, context):
     get_symbols_data_multi(
         symbols,
         max_worker=50,
-        local_save=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
+        local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
         s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
         yf_hist_args=yf_hist_args 
