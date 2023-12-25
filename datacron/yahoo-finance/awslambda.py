@@ -1,12 +1,12 @@
-import boto3
-import os
+import os, json, datetime, sys
 import concurrent.futures
-import datetime
-from source import Source
 import logging.config
+
+import boto3
 import yaml
-import sys
 import yfinance as yf
+
+from source import Source
 
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
@@ -45,14 +45,21 @@ def lambda_get_symbols_data_multi(event, context):
     start_date = event["time"]  # TODO: Confirm this
     next_day = datetime.datetime.strptime(start_date, "%Y-%m-%d") + datetime.timedelta(
         days=1
-    )
-
+    )   
+    
+    # TODO: add with try except
+    if os.getenv('YF_HIST_ARG') is None:
+        yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"} 
+    else:
+        yf_hist_args = json.loads(os.getenv('YF_HIST_ARG'))
+    
     get_symbols_data_multi(
         symbols,
         max_worker=50,
+        local_save=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
-        local_save=True,  # TODO: remove this
-        yf_hist_arg={"start": start_date, "end": next_day, "interval": "1m"},
+        s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
+        yf_hist_args=yf_hist_args 
     )
 
 
@@ -80,9 +87,9 @@ def get_symbols_data_multi(
     symbols,
     max_worker=10,
     print_data=False,
-    local_save: str = None,
+    local_save_path: str = None,
     s3_save_bucket: str = None,
-    s3_parent_key="yfinance/min",
+    s3_parent_key: str = None,
     yf_hist_args: dict = {"interval": "1m"},
 ):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
@@ -110,13 +117,13 @@ def get_symbols_data_multi(
                 )
                 if print_data:
                     logger.info(f"{symbol}: {data}")
-                if local_save:
+                if local_save_path:
                     logger.info(f"{symbol}:Saving to local")
-                    if not os.path.exists(f"./mocks3yfinance/{symbol}/"):
-                        os.makedirs(f"./mocks3yfinance/{symbol}/")
+                    if not os.path.exists(f"./{local_save_path}/{symbol}/"):
+                        os.makedirs(f"./{local_save_path}/{symbol}/")
                     data.to_parquet(
                         # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                        f"./mocks3yfinance/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
+                        f"./{local_save_path}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
                         compression="gzip",
                     )
                 if s3_save_bucket:
