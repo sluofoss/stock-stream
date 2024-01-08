@@ -1,3 +1,5 @@
 black
 python-dotenv
 boto3
+jupyterlab
+duckdb
