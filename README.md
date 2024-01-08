@@ -12,7 +12,7 @@
 - [TODO:](#todo)
 
 # progress tracking
-https://github.com/users/lu0x1a0/projects/1/views/
+https://github.com/users/lu0x1a0/projects/1/
 
 # aws cli set up 
 
