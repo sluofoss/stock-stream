@@ -53,7 +53,7 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
 
 resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
   bucket = "${var.code_bucket_name}"
-  key    = "yahoo-finance/"
+  key    = "yahoo-finance/lambda_cron_code.zip"
   source = "${local.datacron_yfinance_folder}/lambda_cron_code.zip"
 
   # The filemd5() function is available in Terraform 0.11.12 and later
@@ -64,7 +64,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
 
 resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   bucket = "${var.code_bucket_name}"
-  key    = "yahoo-finance/"
+  key    = "yahoo-finance/lambda_cron_layer.zip"
   source = "${local.datacron_yfinance_folder}/lambda_cron_layer.zip"
 
   # The filemd5() function is available in Terraform 0.11.12 and later
