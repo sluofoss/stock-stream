@@ -6,7 +6,6 @@ import boto3
 import yaml
 import yfinance as yf
 
-from source import Source
 
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
@@ -162,7 +161,7 @@ def check_symbol_info_loop(symbols):
     data_store = {}
     except_store = {}
     for i, symbol in enumerate(symbols):
-        s = Source(symbol)
+        s = yf.Ticker(symbol)
         try:
             data_store[symbol] = s.ticker.info
             logger.info(f"{i}, {symbol}, success")

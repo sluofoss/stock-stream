@@ -6,42 +6,46 @@
 
 # TODO: move `provider` to `dev` and `prod` instead of `modules`
 provider "aws" {
+    
 }
 
-data "aws_iam_policy_document" "assume_role" {
-  statement {
-    effect = "Allow"
-
-    principals {
-      type        = "Service"
-      identifiers = ["lambda.amazonaws.com"]
+resource "null_resource" "lambda_cron_code_zip" {
+    triggers = {
+      requirements = filesha1("${local.datacron_yfinance_folder}/awslambda.py")
     }
+    provisioner "local-exec" {
+      command = <<EOT
 
-    actions = ["sts:AssumeRole"]
+        pip3 install -r ${local.requirements_path} -t python/
+        zip -r ${local.layer_zip_path} python/
+      EOT
   }
 }
 
-resource "aws_iam_role" "lambda_yfinance_daily_batch_iam" {
-  name               = "iam_for_lambda"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+resource "null_resource" "lambda_cron_layer_zip" {
+    triggers = {
+      requirements = filesha1("${local.datacron_yfinance_folder}/requirements.py")
+    }
+    provisioner "local-exec" {
+      command = <<EOT
+        # set -e
+        # apt-get update
+        # apt install python3 python3-pip zip -y
+        # rm -rf python
+        # mkdir python
+        pip3 install -r ${local.requirements_path} -t python/
+        zip -r ${local.layer_zip_path} python/
+      EOT
+  }
 }
 
+resource "aws_s3_object" "lambda_cron_code_zip" {
+  bucket = "${var.code_bucket_name}"
+  key    = "/yahoo-finance/lambda_cron_code_zip"
+  source = "${local.datacron_yfinance_folder}/awslambda.py"
 
-resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
-  # If the file is not in the current working directory you will need to include a
-  # path.module in the filename.
-  filename      = "lambda_function_payload.zip"
-  function_name = "lambda_function_name"
-  role          = aws_iam_role.iam_for_lambda.arn
-  handler       = "index.test"
-
-  source_code_hash = data.archive_file.lambda.output_base64sha256
-
-  runtime = "nodejs18.x"
-
-  environment {
-    variables = {
-      foo = "bar"
-    }
-  }
+  # The filemd5() function is available in Terraform 0.11.12 and later
+  # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
+  # etag = "${md5(file("path/to/file"))}"
+  etag = filemd5("${local.datacron_yfinance_folder}/awslambda.py")
 }

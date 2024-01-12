@@ -1,0 +1,93 @@
+resource "null_resource" "main" {
+	  triggers = {
+	    updated_at = timestamp()
+	  }
+	
+
+	  provisioner "local-exec" {
+	    command = <<EOF
+	    yarn config set no-progress
+	    yarn
+	    mkdir -p nodejs
+	    cp -r node_modules nodejs/
+	    rm -r node_modules
+	    EOF
+	
+
+	    working_dir = "${path.module}/${var.code_location}"
+	  }
+}
+
+
+
+data "archive_file" "lamda_layer_zip_cron" {
+    type        = "zip"
+    source_file = "" 
+    output_file = ""
+}
+
+data "archive_file" "lambda_func_zip_cron" {
+    type        = "zip"
+    source_file = ""
+    output_file = ""
+}
+
+resource "aws_s3_bucket_object" "object" {
+  bucket = "your_bucket_name"
+  key    = "new_object_key"
+  source = "path/to/file"
+
+  # The filemd5() function is available in Terraform 0.11.12 and later
+  # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
+  # etag = "${md5(file("path/to/file"))}"
+  etag = filemd5("path/to/file")
+}
+
+resource "aws_s3_bucket_object" "object" {
+  bucket = "your_bucket_name"
+  key    = "new_object_key"
+  source = "path/to/file"
+
+  # The filemd5() function is available in Terraform 0.11.12 and later
+  # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
+  # etag = "${md5(file("path/to/file"))}"
+  etag = filemd5("path/to/file")
+}
+
+data "aws_iam_policy_document" "assume_role" {
+  statement {
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+
+    actions = ["sts:AssumeRole"]
+  }
+}
+
+resource "aws_iam_role" "lambda_yfinance_daily_batch_iam" {
+  name               = "iam_for_lambda"
+  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+
+resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
+  # If the file is not in the current working directory you will need to include a
+  # path.module in the filename.
+  filename      = "lambda_function_payload.zip"
+  function_name = "lambda_function_name"
+  role          = aws_iam_role.iam_for_lambda.arn
+  handler       = "index.test"
+
+  source_code_hash = data.archive_file.lambda.output_base64sha256
+
+  runtime = "nodejs18.x"
+
+  environment {
+    variables = {
+      foo = "bar"
+    }
+  }
+}
