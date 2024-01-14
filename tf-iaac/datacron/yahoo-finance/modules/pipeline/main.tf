@@ -9,6 +9,8 @@ provider "aws" {
     
 }
 
+# Forum suggest moving artifact generation outside of terraform
+# https://discuss.hashicorp.com/t/updating-aws-s3-object-resource-without-deleting-previous-files/36698
 resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
     triggers = {
       requirement1 = filesha1("${local.datacron_yfinance_folder}/awslambda.py")
@@ -33,6 +35,10 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
     }
     provisioner "local-exec" {
       # https://aws.plainenglish.io/streamlining-serverless-applications-managing-aws-lambda-dependencies-with-layers-and-terraform-18968cf27811
+      
+      # TODO: remove duplicate packages: boto, pip, etc
+      # https://stackoverflow.com/questions/69355100/reducing-python-zip-size-to-use-with-aws-lambda
+
       command = <<EOT
         # set -e
         # apt-get update
