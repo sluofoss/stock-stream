@@ -91,12 +91,44 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "lambda_yfinance_daily_batch" {
-  name               = "iam_for_lambda" #TODO: CHANGE THIS TO "lambda_yfinance_daily_batch"
+  name               = "lambda_yfinance_daily_batch_${local.env}"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
+# where this is templated from:
+# https://stackoverflow.com/questions/57145353/how-to-grant-lambda-permission-to-upload-file-to-s3-bucket-in-terraform
+# TODO: Change this to resource base policy instead
+resource "aws_iam_policy" "lambda_yfinance_daily_batch_s3_upload" {
+  name        = "lambda_yfinance_daily_batch_s3_upload_${local.env}"
+  description = "allow lambda to upload to specific bucket"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    Statement = [
+      {
+          Effect = "Allow"
+          Action =  [
+              "logs:*"
+          ]
+          "Resource": "arn:aws:logs:*:*:*"
+      },
+      {
+          Effect =  "Allow",
+          Action = [
+              "s3:*"
+          ]
+          Resource = "arn:aws:s3:::${var.data_bucket_name}"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_yfinance_daily_batch_s3_upload" {
+  role       = aws_iam_role.lambda_yfinance_daily_batch.name
+  policy_arn = aws_iam_policy.lambda_yfinance_daily_batch_s3_upload.arn
+}
+
 resource "aws_lambda_layer_version" "lambda_yfinance_daily_batch" {
-  layer_name    = "lambda_yfinance_daily_batch"
+  layer_name    = "lambda_yfinance_daily_batch_${local.env}"
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.key
   source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256
@@ -107,7 +139,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   # path.module in the filename.
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_code_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_code_zip.key
-  function_name = "lambda_yfinance_daily_batch_prod" # TODO: Change this to be environment specific
+  function_name = "lambda_yfinance_daily_batch_${local.env}" # TODO: Change this to be environment specific
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   handler       = "awslambda.lambda_get_symbols_data_multi"
 
@@ -123,3 +155,4 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
     }
   }
 }
+

@@ -4,4 +4,6 @@ locals {
   datacron_yfinance_folder       = "../../../../../datacron/yahoo-finance"
     # pipeline //modules//yahoo-finance//datacron//tf-iaac//stock_2023
     # TODO: change this once migrate to workspace (dev/prod) folders
+
+  env = "dev"
 }
