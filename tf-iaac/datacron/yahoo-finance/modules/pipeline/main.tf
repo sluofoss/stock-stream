@@ -63,6 +63,8 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
   # etag = "${md5(file("path/to/file"))}"
   etag = filemd5("${local.datacron_yfinance_folder}/awslambda.py")
+
+  depends_on = [null_resource.lambda_yfinance_daily_batch_code_zip]
 }
 
 resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
@@ -74,6 +76,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
   # etag = "${md5(file("path/to/file"))}"
   etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") # TODO: this seems to generate cause refresh to happen when there are no change?
+  depends_on = [ null_resource.lambda_yfinance_daily_batch_layer_zip ]
 }
 
 
