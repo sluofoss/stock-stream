@@ -161,6 +161,8 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   environment {
     variables = {
       foo = "bar"
+      S3_STORE_BUCKET = var.data_bucket_name
+      S3_STORE_PARENT_KEY = "yfinance/min" # TODO: figure out whether this should be hardcoded
     }
   }
 }
