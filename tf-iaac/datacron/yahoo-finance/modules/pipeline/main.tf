@@ -18,7 +18,9 @@ resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
       command = <<EOT
         echo "start zipping lambda code"
         rm -f ${local.datacron_yfinance_folder}/lambda_cron_code.zip
-        cd ${local.datacron_yfinance_folder} && zip ./lambda_cron_code.zip ./awslambda.py 
+        cd ${local.datacron_yfinance_folder} 
+        zip ./lambda_cron_code.zip ./awslambda.py 
+        zip ./lambda_cron_code.zip ./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv
         echo "finish zipping lambda code"
       EOT
   }
@@ -27,7 +29,7 @@ resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
 # can be partially replaced with `data "archive_file"`
 resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
     triggers = {
-      requirements = filesha1("${local.datacron_yfinance_folder}/requirements.txt") #TODO: add the csv
+      requirements = filesha1("${local.datacron_yfinance_folder}/requirements.txt")
     }
     provisioner "local-exec" {
       # https://aws.plainenglish.io/streamlining-serverless-applications-managing-aws-lambda-dependencies-with-layers-and-terraform-18968cf27811
@@ -71,7 +73,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   # The filemd5() function is available in Terraform 0.11.12 and later
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
   # etag = "${md5(file("path/to/file"))}"
-  etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt")
+  etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") # TODO: this seems to generate cause refresh to happen when there are no change?
 }
 
 
@@ -89,11 +91,12 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 resource "aws_iam_role" "lambda_yfinance_daily_batch" {
-  name               = "iam_for_lambda"
+  name               = "iam_for_lambda" #TODO: CHANGE THIS TO "lambda_yfinance_daily_batch"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
 }
 
 resource "aws_lambda_layer_version" "lambda_yfinance_daily_batch" {
+  layer_name    = "lambda_yfinance_daily_batch"
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.key
   source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256

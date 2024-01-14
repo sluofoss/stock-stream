@@ -168,3 +168,4 @@ def check_symbol_info_loop(symbols):
         except Exception as e:
             logger.info(f"{i}, {e}")
             except_store[symbol] = str(e)
+
