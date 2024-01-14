@@ -9,6 +9,14 @@ provider "aws" {
     
 }
 
+
+
+#############################
+##
+##  CODE COMPILE & UPLOAD
+##
+#############################
+
 # Forum suggest moving artifact generation outside of terraform
 # https://discuss.hashicorp.com/t/updating-aws-s3-object-resource-without-deleting-previous-files/36698
 resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
@@ -86,15 +94,19 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
 }
 
 
+#############################
+##
+##  LAMBDA DEFINITION
+##
+#############################
+
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
-
     principals {
       type        = "Service"
       identifiers = ["lambda.amazonaws.com"]
     }
-
     actions = ["sts:AssumeRole"]
   }
 }
@@ -106,7 +118,7 @@ resource "aws_iam_role" "lambda_yfinance_daily_batch" {
 
 # where this is templated from:
 # https://stackoverflow.com/questions/57145353/how-to-grant-lambda-permission-to-upload-file-to-s3-bucket-in-terraform
-# TODO: Change this to resource base policy instead
+# TODO: Change this to resource base policy instead and/or tighten action permission 
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_s3_upload" {
   name        = "lambda_yfinance_daily_batch_s3_upload_${local.env}"
   description = "allow lambda to upload to specific bucket"
@@ -167,3 +179,51 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   }
 }
 
+
+
+#############################
+##
+##  SCHEDULING (METHOD 1)
+##
+#############################
+
+resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
+  name        = "lambda_yfinance_daily_batch_caller_${local.env}"
+  description = "allow lambda to upload to specific bucket"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    statement = {
+      sid       = "LambdaAccess"
+      effect    = "Allow"
+      actions   = ["lambda:InvokeFunction"]
+      resources = [aws_lambda_function.lambda_yfinance_daily_batch.arn]
+    }
+  })
+}
+
+resource "aws_iam_role" "lambda_yfinance_daily_batch_caller" {
+
+  name                  = "lambda_yfinance_daily_batch_caller_${local.env}"
+  assume_role_policy    = data.aws_iam_policy_document.assume_role[0].json
+
+  tags = merge({ Name = local.role_name }, var.tags, var.role_tags)
+}
+resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
+  name = "lambda_yfinance_daily_batch_${local.env}"
+  flexible_time_window {
+    mode = "OFF"
+  }
+  schedule_expression = ""
+
+
+}
+
+
+
+#############################
+##
+##  SCHEDULING (METHOD 2 )
+##
+#############################
+
+##  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission
