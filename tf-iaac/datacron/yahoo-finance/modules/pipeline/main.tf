@@ -11,7 +11,8 @@ provider "aws" {
 
 resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
     triggers = {
-      requirements = filesha1("${local.datacron_yfinance_folder}/awslambda.py")
+      requirement1 = filesha1("${local.datacron_yfinance_folder}/awslambda.py")
+      requirement2 = filesha1("${local.datacron_yfinance_folder}/ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
     }
     provisioner "local-exec" {
       command = <<EOT
@@ -87,21 +88,29 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
-resource "aws_iam_role" "lambda_yfinance_daily_batch_iam" {
+resource "aws_iam_role" "lambda_yfinance_daily_batch" {
   name               = "iam_for_lambda"
   assume_role_policy = data.aws_iam_policy_document.assume_role.json
+}
+
+resource "aws_lambda_layer_version" "lambda_yfinance_daily_batch" {
+  s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.bucket
+  s3_key        = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.key
+  source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256
 }
 
 resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
-  s3_bucket     = "${var.code_bucket_name}"
-  s3_key        = "yahoo-finance/lambda_cron_code.zip"
+  s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_code_zip.bucket
+  s3_key        = aws_s3_object.lambda_yfinance_daily_batch_code_zip.key
   function_name = "lambda_yfinance_daily_batch_prod" # TODO: Change this to be environment specific
-  role          = aws_iam_role.iam_for_lambda.arn
+  role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   handler       = "awslambda.lambda_get_symbols_data_multi"
 
   source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_code_zip.checksum_sha256
+
+  layers        = [aws_lambda_layer_version.lambda_yfinance_daily_batch.arn]
 
   runtime = "python3.11"
 
