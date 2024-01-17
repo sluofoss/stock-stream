@@ -239,7 +239,7 @@ resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
   flexible_time_window {
     mode = "OFF"
   }
-  schedule_expression = "cron(* * * * ? *)"
+  schedule_expression = "cron(0 18 * * ? *)"
   schedule_expression_timezone = var.timezone
   target {
     arn       = aws_lambda_function.lambda_yfinance_daily_batch.arn
