@@ -100,7 +100,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
 ##
 #############################
 
-data "aws_iam_policy_document" "assume_role" {
+data "aws_iam_policy_document" "assume_lambda_role" { # TODO: refactor out to main infra module
   statement {
     effect = "Allow"
     principals {
@@ -113,12 +113,13 @@ data "aws_iam_policy_document" "assume_role" {
 
 resource "aws_iam_role" "lambda_yfinance_daily_batch" {
   name               = "lambda_yfinance_daily_batch_${local.env}"
-  assume_role_policy = data.aws_iam_policy_document.assume_role.json
+  assume_role_policy = data.aws_iam_policy_document.assume_lambda_role.json
 }
 
 # where this is templated from:
 # https://stackoverflow.com/questions/57145353/how-to-grant-lambda-permission-to-upload-file-to-s3-bucket-in-terraform
 # TODO: Change this to resource base policy instead and/or tighten action permission 
+# https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_s3_upload" {
   name        = "lambda_yfinance_daily_batch_s3_upload_${local.env}"
   description = "allow lambda to upload to specific bucket"
@@ -187,6 +188,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 ##
 #############################
 
+/*
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
   name        = "lambda_yfinance_daily_batch_caller_${local.env}"
   description = "allow lambda to upload to specific bucket"
@@ -200,26 +202,7 @@ resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
     }
   })
 }
-
-resource "aws_iam_role" "lambda_yfinance_daily_batch_caller" {
-
-  name                  = "lambda_yfinance_daily_batch_caller_${local.env}"
-  assume_role_policy    = data.aws_iam_policy_document.assume_role[0].json
-
-  tags = merge({ Name = local.role_name }, var.tags, var.role_tags)
-}
-resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
-  name = "lambda_yfinance_daily_batch_${local.env}"
-  flexible_time_window {
-    mode = "OFF"
-  }
-  schedule_expression = ""
-
-
-}
-
-
-
+*/
 #############################
 ##
 ##  SCHEDULING (METHOD 2 )
@@ -227,3 +210,43 @@ resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
 #############################
 
 ##  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission
+
+data "aws_iam_policy_document" "assume_scheduler_role" { # TODO: refactor out to main infra module
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["scheduler.amazonaws.com"]
+    }
+    actions = ["sts:AssumeRole"]
+  }
+}
+resource "aws_iam_role" "lambda_yfinance_daily_batch_caller" {
+  name                  = "lambda_yfinance_daily_batch_caller_${local.env}"
+  assume_role_policy    = data.aws_iam_policy_document.assume_scheduler_role.json
+}
+
+resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
+  name = "lambda_yfinance_daily_batch_${local.env}"
+  flexible_time_window {
+    mode = "OFF"
+  }
+  schedule_expression = "cron(0 18 * * ? *)"
+  schedule_expression_timezone = var.timezone
+  target {
+    arn       = aws_lambda_function.lambda_yfinance_daily_batch.arn
+    role_arn  = lambda_yfinance_daily_batch_caller
+  }
+}
+
+resource "aws_lambda_permission" "lambda_yfinance_daily_batch_scheduler" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.lambda_yfinance_daily_batch.function_name
+  principal     = "scheduler.amazonaws.com"
+  source_arn    = aws_scheduler_schedule.lambda_yfinance_daily_batch.arn
+  lifecycle {
+    replace_triggered_by = [
+      aws_lambda_function.lambda_yfinance_daily_batch
+    ]
+  }
+}
