@@ -46,7 +46,7 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
       
       # TODO: remove duplicate packages: boto, pip, etc
       # https://stackoverflow.com/questions/69355100/reducing-python-zip-size-to-use-with-aws-lambda
-
+      # https://stackoverflow.com/questions/13032701/how-to-remove-folders-with-a-certain-name
       command = <<EOT
         # set -e
         # apt-get update
@@ -60,6 +60,10 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
         rm -f ${local.datacron_yfinance_folder}/lambda_cron_layer.zip
 
         pip install --target ${local.datacron_yfinance_folder}/lambda_cron_layer/ -q -r ${local.datacron_yfinance_folder}/requirements.txt
+
+        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'botocore*' -exec rm -r {} +
+        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'jmespath*' -exec rm -r {} +
+        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'six*' -exec rm -r {} +
 
 	      cd ${local.datacron_yfinance_folder}/lambda_cron_layer/ && zip -r -q ../lambda_cron_layer.zip .
 
@@ -188,7 +192,6 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 ##
 #############################
 
-/*
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
   name        = "lambda_yfinance_daily_batch_caller_${local.env}"
   description = "allow lambda to upload to specific bucket"
@@ -202,14 +205,7 @@ resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
     }
   })
 }
-*/
-#############################
-##
-##  SCHEDULING (METHOD 2 )
-##
-#############################
 
-##  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission
 
 data "aws_iam_policy_document" "assume_scheduler_role" { # TODO: refactor out to main infra module
   statement {
@@ -226,12 +222,17 @@ resource "aws_iam_role" "lambda_yfinance_daily_batch_caller" {
   assume_role_policy    = data.aws_iam_policy_document.assume_scheduler_role.json
 }
 
+resource "aws_iam_role_policy_attachment" "lambda_yfinance_daily_batch_caller" {
+  role       = aws_iam_role.lambda_yfinance_daily_batch_caller.name
+  policy_arn = aws_iam_policy.lambda_yfinance_daily_batch_caller.arn
+}
+
 resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
   name = "lambda_yfinance_daily_batch_${local.env}"
   flexible_time_window {
     mode = "OFF"
   }
-  schedule_expression = "cron(0 18 * * ? *)"
+  schedule_expression = "cron(* * * * ? *)"
   schedule_expression_timezone = var.timezone
   target {
     arn       = aws_lambda_function.lambda_yfinance_daily_batch.arn
@@ -239,6 +240,29 @@ resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
   }
 }
 
+resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
+  name        = "lambda_yfinance_daily_batch_caller_${local.env}"
+  description = "allow lambda to upload to specific bucket"
+  policy      = jsonencode({
+    Version   = "2012-10-17",
+    statement = {
+      sid       = "LambdaAccess"
+      effect    = "Allow"
+      actions   = ["lambda:InvokeFunction"]
+      resources = [aws_lambda_function.lambda_yfinance_daily_batch.arn]
+    }
+  })
+}
+
+#############################
+##
+##  SCHEDULING (METHOD 2 )
+##
+#############################
+
+##  https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/lambda_permission
+
+/*
 resource "aws_lambda_permission" "lambda_yfinance_daily_batch_scheduler" {
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.lambda_yfinance_daily_batch.function_name
@@ -250,3 +274,4 @@ resource "aws_lambda_permission" "lambda_yfinance_daily_batch_scheduler" {
     ]
   }
 }
+*/
