@@ -235,7 +235,7 @@ resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
   schedule_expression_timezone = var.timezone
   target {
     arn       = aws_lambda_function.lambda_yfinance_daily_batch.arn
-    role_arn  = lambda_yfinance_daily_batch_caller
+    role_arn  = aws_iam_role.lambda_yfinance_daily_batch_caller.arn
   }
 }
 
