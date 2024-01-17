@@ -240,19 +240,6 @@ resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
   }
 }
 
-resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
-  name        = "lambda_yfinance_daily_batch_caller_${local.env}"
-  description = "allow lambda to upload to specific bucket"
-  policy      = jsonencode({
-    Version   = "2012-10-17",
-    statement = {
-      sid       = "LambdaAccess"
-      effect    = "Allow"
-      actions   = ["lambda:InvokeFunction"]
-      resources = [aws_lambda_function.lambda_yfinance_daily_batch.arn]
-    }
-  })
-}
 
 #############################
 ##
