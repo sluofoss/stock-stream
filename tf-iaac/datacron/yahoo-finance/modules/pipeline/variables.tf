@@ -8,3 +8,8 @@ variable "data_bucket_name" {
     description = "name of the bucket which all data sit in"
     type        = string
 }
+
+variable "timezone" {
+    description = "timezone which the event scheduler calls in"
+    type        = string
+}
