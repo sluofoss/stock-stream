@@ -81,6 +81,8 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
   # etag = "${md5(file("path/to/file"))}"
   etag = filemd5("${local.datacron_yfinance_folder}/awslambda.py")
+  # TODO: change etag with source hash 
+  # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
 
   depends_on = [null_resource.lambda_yfinance_daily_batch_code_zip]
 }
@@ -93,7 +95,9 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   # The filemd5() function is available in Terraform 0.11.12 and later
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
   # etag = "${md5(file("path/to/file"))}"
-  etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") # TODO: this seems to generate cause refresh to happen when there are no change?
+  etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
+  # TODO: change etag with source hash 
+  # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
   depends_on = [ null_resource.lambda_yfinance_daily_batch_layer_zip ]
 }
 
@@ -192,17 +196,20 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 ##
 #############################
 
+# https://docs.aws.amazon.com/scheduler/latest/UserGuide/setting-up.html#setting-up-execution-role
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
   name        = "lambda_yfinance_daily_batch_caller_${local.env}"
   description = "allow lambda to upload to specific bucket"
   policy      = jsonencode({
     Version   = "2012-10-17",
-    statement = {
-      sid       = "LambdaAccess"
-      effect    = "Allow"
-      actions   = ["lambda:InvokeFunction"]
-      resources = [aws_lambda_function.lambda_yfinance_daily_batch.arn]
-    }
+    Statement = [
+      {
+        Action  = "lambda:InvokeFunction"
+        Effect  = "Allow"
+        Resource = [aws_lambda_function.lambda_yfinance_daily_batch.arn]
+      
+      }
+    ]
   })
 }
 
