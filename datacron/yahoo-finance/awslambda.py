@@ -10,7 +10,13 @@ import yfinance as yf
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
 logger = logging.getLogger("lambda")
-with open("logconfig.yaml", "r") as configfile:
+
+if os.getenv("env") == "local": #TODO: figure out how to change this for dev, uat, prod
+    cfg_file_name = "logconfig.yaml"
+else:
+    cfg_file_name = "logconfig_aws.yaml"
+
+with open(cfg_file_name, "r") as configfile:
     configdict = yaml.safe_load(configfile)
     logging.config.dictConfig(configdict)
 
@@ -32,8 +38,8 @@ def lambda_get_symbols_data_multi(event, context):
         event (_type_): _description_
         context (_type_): _description_
     """
-    logger.info(f'event:{event}')
-    logger.info(f'context:{context}')
+    logger.info(f"event:{event}")
+    logger.info(f"context:{context}")
 
     import pandas as pd
 
@@ -41,24 +47,28 @@ def lambda_get_symbols_data_multi(event, context):
     # print(df)
     symbols = [x + ".AX" for x in df["ASX code"]]
 
-    start_date = event["time"]  # TODO: Confirm this
-    next_day = datetime.datetime.strptime(start_date, "%Y-%m-%d") + datetime.timedelta(
-        days=1
-    )   
+    # Event time looks like 2024-01-26T08:12:00Z
+    # TODO: decide whether need to adjust this for other markets deployed in other aws regions
+    start_date = datetime.datetime.strptime(
+        event["time"], "%Y-%m-%dT%H:%M:%S%z"
+    ).astimezone(tz=None).date()
+    next_day = start_date + datetime.timedelta(days=1)
+    __exec_time_zone = datetime.datetime.now(datetime.timezone(datetime.timedelta(0))).astimezone().tzinfo
+    logger.info(f"start_date: {start_date}, next_day: {next_day}, exec_time_zone: {__exec_time_zone}")
     
     # TODO: add with try except
-    if os.getenv('YF_HIST_ARG') is None:
-        yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"} 
+    if os.getenv("YF_HIST_ARG") is None:
+        yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"}
     else:
-        yf_hist_args = json.loads(os.getenv('YF_HIST_ARG'))
-    
+        yf_hist_args = json.loads(os.getenv("YF_HIST_ARG"))
+
     get_symbols_data_multi(
         symbols,
         max_worker=50,
         local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
         s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
-        yf_hist_args=yf_hist_args 
+        yf_hist_args=yf_hist_args,
     )
 
 
@@ -124,7 +134,7 @@ def get_symbols_data_multi(
                         # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
                         f"./{local_save_path}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
                         compression="gzip",
-                    )
+                    ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
                     data.to_parquet(
@@ -168,4 +178,3 @@ def check_symbol_info_loop(symbols):
         except Exception as e:
             logger.info(f"{i}, {e}")
             except_store[symbol] = str(e)
-
