@@ -80,11 +80,13 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
 
   # The filemd5() function is available in Terraform 0.11.12 and later
   # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
-  # etag = "${md5(file("path/to/file"))}"
-  etag = filemd5("${local.datacron_yfinance_folder}/awslambda.py")
-  # TODO: change etag with source hash 
+  
+  # changed etag with source hash 
   # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
 
+  # etag = "${md5(file("path/to/file"))}"
+  source_hash = filemd5("${local.datacron_yfinance_folder}/lambda_cron_code.zip")
+  
   depends_on = [null_resource.lambda_yfinance_daily_batch_code_zip]
 }
 
@@ -93,12 +95,12 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   key    = "yahoo-finance/lambda_cron_layer.zip"
   source = "${local.datacron_yfinance_folder}/lambda_cron_layer.zip"
 
-  # The filemd5() function is available in Terraform 0.11.12 and later
-  # For Terraform 0.11.11 and earlier, use the md5() function and the file() function:
-  # etag = "${md5(file("path/to/file"))}"
-  etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
-  # TODO: change etag with source hash 
+  # changed etag with source hash 
   # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
+
+  # etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
+  source_hash = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
+  
   depends_on = [ null_resource.lambda_yfinance_daily_batch_layer_zip ]
 }
 
@@ -179,6 +181,8 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   layers        = [aws_lambda_layer_version.lambda_yfinance_daily_batch.arn]
 
   runtime = "python3.11"
+
+  timeout = 900 # 60*15 seconds, or 15 minutes
 
   environment {
     variables = {
