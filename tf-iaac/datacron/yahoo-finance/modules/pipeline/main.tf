@@ -31,6 +31,7 @@ resource "null_resource" "lambda_yfinance_daily_batch_code_zip" {
         cd ${local.datacron_yfinance_folder} 
         zip ./lambda_cron_code.zip ./awslambda.py 
         zip ./lambda_cron_code.zip ./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv
+        zip ./lambda_cron_code.zip ./logconfig_aws.yaml
         echo "finish zipping lambda code"
       EOT
   }
@@ -59,7 +60,7 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
         
         rm -f ${local.datacron_yfinance_folder}/lambda_cron_layer.zip
 
-        pip install --target ${local.datacron_yfinance_folder}/lambda_cron_layer/ -q -r ${local.datacron_yfinance_folder}/requirements.txt
+        pip install --target ${local.datacron_yfinance_folder}/lambda_cron_layer/python/ -q -r ${local.datacron_yfinance_folder}/requirements.txt
 
         find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'botocore*' -exec rm -r {} +
         find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'jmespath*' -exec rm -r {} +
@@ -184,6 +185,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
       foo = "bar"
       S3_STORE_BUCKET = var.data_bucket_name
       S3_STORE_PARENT_KEY = "yfinance/min" # TODO: figure out whether this should be hardcoded
+      env = local.env
     }
   }
 }
