@@ -51,9 +51,10 @@ def lambda_get_symbols_data_multi(event, context):
     # TODO: decide whether need to adjust this for other markets deployed in other aws regions
     start_date = datetime.datetime.strptime(
         event["time"], "%Y-%m-%dT%H:%M:%S%z"
-    ).astimezone(tz=None)
+    ).astimezone(tz=None).date()
     next_day = start_date + datetime.timedelta(days=1)
-    logger.info(f"start_date: {start_date}, next_day: {next_day}")
+    __exec_time_zone = datetime.datetime.now(datetime.timezone(datetime.timedelta(0))).astimezone().tzinfo
+    logger.info(f"start_date: {start_date}, next_day: {next_day}, exec_time_zone: {__exec_time_zone}")
     
     # TODO: add with try except
     if os.getenv("YF_HIST_ARG") is None:
@@ -133,7 +134,7 @@ def get_symbols_data_multi(
                         # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
                         f"./{local_save_path}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
                         compression="gzip",
-                    )
+                    ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
                     data.to_parquet(
