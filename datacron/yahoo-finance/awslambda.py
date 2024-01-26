@@ -47,11 +47,14 @@ def lambda_get_symbols_data_multi(event, context):
     # print(df)
     symbols = [x + ".AX" for x in df["ASX code"]]
 
-    start_date = event["time"]  # TODO: Confirm this
-    next_day = datetime.datetime.strptime(start_date, "%Y-%m-%d") + datetime.timedelta(
-        days=1
-    )
-
+    # Event time looks like 2024-01-26T08:12:00Z
+    # TODO: decide whether need to adjust this for other markets deployed in other aws regions
+    start_date = datetime.datetime.strptime(
+        event["time"], "%Y-%m-%dT%H:%M:%S%z"
+    ).astimezone(tz=None)
+    next_day = start_date + datetime.timedelta(days=1)
+    logger.info(f"start_date: {start_date}, next_day: {next_day}")
+    
     # TODO: add with try except
     if os.getenv("YF_HIST_ARG") is None:
         yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"}
