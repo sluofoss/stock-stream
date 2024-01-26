@@ -10,12 +10,6 @@ handlers:
     formatter: detail
     level   : DEBUG
     stream  : ext://sys.stdout
-  logfile:
-    class: logging.FileHandler
-    filename: lambda.log
-    mode: 'w'
-    level: DEBUG
-    formatter: detail
 loggers:
   lambda:
     level: DEBUG
