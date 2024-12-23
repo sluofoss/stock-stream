@@ -1,7 +1,5 @@
 import dotenv
 
-from awslambda import lambda_get_symbols_data_multi, lambda_check_symbols_info_multi
-
 import argparse
 
 if __name__ == "__main__":
@@ -14,8 +12,10 @@ if __name__ == "__main__":
 
     if not dotenv.load_dotenv(args.env):
         raise Exception("environment file empty or not exist")
-
-    event = {"time": "2023-12-14"}
+    
+    from awslambda import lambda_get_symbols_data_multi, lambda_check_symbols_info_multi
+    
+    event = {"time": "2024-01-26T08:12:00Z"}
     context = None
     lambda_get_symbols_data_multi(event, context)
     # lambda_check_symbols_info_multi(event, context)

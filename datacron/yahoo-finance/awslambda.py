@@ -1,3 +1,20 @@
+"""
+Collection of functions to be executed in the AWS environment to retrieve data from yahoo finance.
+
+Env Var:
+    env: 
+        determine which environment code is executed in.
+        valid: local, dev, uat, prod
+    YF_HIST_ARG:
+        [Optional] json string parametrizing the yfinance.Ticker.History method
+    LOCAL_SAVE_PATH:
+        [Optional] determines if the result should be stored on local machine. useful outside of lambda 
+        (i.e. in container env or local exec) 
+    S3_STORE_BUCKET:
+        [Optional] bucket name to store result
+    S3_STORE_PARENT_KEY:
+        [Optional] root key in s3 bucket to store result.
+"""
 import os, json, datetime, sys
 import concurrent.futures
 import logging.config
@@ -15,7 +32,7 @@ if os.getenv("env") == "local": #TODO: figure out how to change this for dev, ua
     cfg_file_name = "logconfig.yaml"
 else:
     cfg_file_name = "logconfig_aws.yaml"
-
+print(cfg_file_name)
 with open(cfg_file_name, "r") as configfile:
     configdict = yaml.safe_load(configfile)
     logging.config.dictConfig(configdict)
