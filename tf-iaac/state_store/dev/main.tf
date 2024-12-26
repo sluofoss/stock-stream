@@ -7,6 +7,21 @@ terraform {
       version = "~> 4.0"
     }
   }
+
+  backend "s3" {
+    # This backend configuration is filled in automatically at test time by Terratest. If you wish to run this example
+    # manually, uncomment and fill in the config below.
+    # no this would be error prone, let's just hard code it for now
+    
+    # dev shared copy paste (differnet by dev staging prod) 
+    bucket = "stock-stream-state-dev"
+    region = "ap-southeast-2"
+    dynamodb_table = "stock-stream-state-dev"
+    encrypt = true
+
+    # unique to this folder (differnent by service)
+    key = "state_store/terraform.tfstate"
+  }
 }
 
 provider "aws" {
