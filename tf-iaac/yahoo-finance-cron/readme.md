@@ -1,0 +1,2 @@
+# diagram (from dev)
+![yahoo-finance-cron-dev]( https://kroki.io/graphviz/svg/eNq1kjFPwzAQhff8Cssz9cJYlZWFibVC1tm-pFYdO7qzQQj1v-OYiaqBFJXR7-7e9_Rk5weC6SAexUcnBEE8Ok9iJ-Tzk9xWJSaHYs8HmLCqhDbfiT7FHGGcBckQecNIvpcv8z4X82UobSickfSYXAmoOCeCAWXjCBHAYJgNzsZtuABos7MDBW-s-V6bYo-YVQUS9IlGzRlype0baCd_XmvRf_HWUzHBWw3WIrM2Idmj-qYt0FYcruLXEl5rn-wdaoyW3qfsU9Q2xd4PhWB-KYc9lJCXolzlsSpVteN65OOgMIIJ6JbYFzYb4dTdoPnNw5U_Y9vdtu9_CHCp2j9gTt0nFEVqRw==)

@@ -27,3 +27,8 @@ terraform {
 provider "aws" {
     region = "ap-southeast-2" //sydney
 }
+
+module "storage" {
+  source = "../modules/storage/"
+  env_name = "dev"
+}

@@ -2,20 +2,21 @@
 ```
    📂 yahoo-finance-cron
       📂 dev
-         📂 data_store
+         📂 storage
          📂 vpc
          📂 pipeline
       📂 staging
-         📂 data_store
+         📂 storage
          📂 vpc
          📂 pipeline   
       📂 prod
-         📂 data_store
+         📂 storage
          📂 vpc
          📂 pipeline
       📂 modules
-         📂 data_store
-            store for the results from lambda, include permanent s3 buckets
+         📂 storage
+            - store for the results from lambda, include permanent s3 buckets
+            - store the artifacts required for deployment (lambda package)
          📂 vpc
             store the network config
          📂 pipeline
@@ -42,6 +43,8 @@ For each environment in `yahoo-finance-cron/`
 ```
 > [!NOTE] 
 for any change to `data_store` and `vpc`, `pipeline` needs to `terraform init` again.
+
+
 
 
 
