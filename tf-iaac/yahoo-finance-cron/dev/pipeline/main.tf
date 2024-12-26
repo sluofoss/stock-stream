@@ -31,6 +31,6 @@ provider "aws" {
 module "pipeline" {
   source = "../../modules/pipeline/"
   env = "dev"
-  code_bucket_name = 
-  data_bucket_name = 
+  code_bucket_name = data.terraform_remote_state.storage.outputs.s3_bucket_arn
+  data_bucket_name = data.terraform_remote_state.storage.outputs.s3_bucket_arn
 }

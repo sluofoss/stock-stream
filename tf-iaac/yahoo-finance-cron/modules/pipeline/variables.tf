@@ -12,6 +12,7 @@ variable "data_bucket_name" {
 variable "timezone" {
     description = "timezone which the event scheduler calls in"
     type        = string
+    default     = "Australia/Sydney"
 }
 
 variable "env" {
