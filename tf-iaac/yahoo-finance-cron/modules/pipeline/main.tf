@@ -5,11 +5,6 @@
 # according to this link, we dont have to define var AWS credential related ENV VAR
 
 # TODO: move `provider` to `dev` and `prod` instead of `modules`
-provider "aws" {
-    
-}
-
-
 
 #############################
 ##

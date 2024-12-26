@@ -1,3 +1,7 @@
 *.parquet
 *.pyc
 *.log
+*.terraform/
+.terraform
+*.tfstate
+*.tfstate.backup
