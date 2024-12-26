@@ -42,3 +42,8 @@ For each environment in `yahoo-finance-cron/`
 ```
 > [!NOTE] 
 for any change to `data_store` and `vpc`, `pipeline` needs to `terraform init` again.
+
+
+
+# diagram 
+![state store dev](https://kroki.io/graphviz/svg/eNq9kr1uAyEQhPt7CkQdX5PScto0qdJaEVpg74yOgxMLjqzI7x4gTSyZyJe_kmVmv0GDNmOA5cAe2VvHWAA3aRPYjvHnJ77NE-c1sj0dYME8DajiHRu8iw7mMuAEjjaEwQz8pegpyY-FXNlEEYOYvU4We4oQUVD0AYXGI688xixItGVRQ1ZFDWC9axh7eCWhT9nltRQRZJbkNAEGH2ZhvZqIs32l7_gN2vq4r2l0L2RSE8ZP5qq7BLVlaxhiSdIaJUApJBKypOwvZg3qDcZVOXIVx9wyGY0CnQqnJRrvhPJuMGMKUE69xgGSja1Iq3asSpfXUjYbN_boSrG6leGKspLO3S82snn45g_adn_Txz8EulbBD7Dn7h2LQruS)
