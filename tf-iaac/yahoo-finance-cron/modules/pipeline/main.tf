@@ -118,7 +118,7 @@ data "aws_iam_policy_document" "assume_lambda_role" { # TODO: refactor out to ma
 }
 
 resource "aws_iam_role" "lambda_yfinance_daily_batch" {
-  name               = "lambda_yfinance_daily_batch_${local.env}"
+  name               = "lambda_yfinance_daily_batch_${var.env}"
   assume_role_policy = data.aws_iam_policy_document.assume_lambda_role.json
 }
 
@@ -127,7 +127,7 @@ resource "aws_iam_role" "lambda_yfinance_daily_batch" {
 # TODO: Change this to resource base policy instead and/or tighten action permission 
 # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_policy
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_s3_upload" {
-  name        = "lambda_yfinance_daily_batch_s3_upload_${local.env}"
+  name        = "lambda_yfinance_daily_batch_s3_upload_${var.env}"
   description = "allow lambda to upload to specific bucket"
   policy      = jsonencode({
     Version   = "2012-10-17",
@@ -156,7 +156,7 @@ resource "aws_iam_role_policy_attachment" "lambda_yfinance_daily_batch_s3_upload
 }
 
 resource "aws_lambda_layer_version" "lambda_yfinance_daily_batch" {
-  layer_name    = "lambda_yfinance_daily_batch_${local.env}"
+  layer_name    = "lambda_yfinance_daily_batch_${var.env}"
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.key
   source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256
@@ -167,7 +167,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   # path.module in the filename.
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_code_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_code_zip.key
-  function_name = "lambda_yfinance_daily_batch_${local.env}" # TODO: Change this to be environment specific
+  function_name = "lambda_yfinance_daily_batch_${var.env}" # TODO: Change this to be environment specific
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   handler       = "awslambda.lambda_get_symbols_data_multi"
 
@@ -184,7 +184,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
       foo = "bar"
       S3_STORE_BUCKET = var.data_bucket_name
       S3_STORE_PARENT_KEY = "yfinance/min" # TODO: figure out whether this should be hardcoded
-      env = local.env
+      env = var.env
     }
   }
 }
@@ -199,7 +199,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 
 # https://docs.aws.amazon.com/scheduler/latest/UserGuide/setting-up.html#setting-up-execution-role
 resource "aws_iam_policy" "lambda_yfinance_daily_batch_caller" {
-  name        = "lambda_yfinance_daily_batch_caller_${local.env}"
+  name        = "lambda_yfinance_daily_batch_caller_${var.env}"
   description = "allow lambda to upload to specific bucket"
   policy      = jsonencode({
     Version   = "2012-10-17",
@@ -226,7 +226,7 @@ data "aws_iam_policy_document" "assume_scheduler_role" { # TODO: refactor out to
   }
 }
 resource "aws_iam_role" "lambda_yfinance_daily_batch_caller" {
-  name                  = "lambda_yfinance_daily_batch_caller_${local.env}"
+  name                  = "lambda_yfinance_daily_batch_caller_${var.env}"
   assume_role_policy    = data.aws_iam_policy_document.assume_scheduler_role.json
 }
 
@@ -236,7 +236,7 @@ resource "aws_iam_role_policy_attachment" "lambda_yfinance_daily_batch_caller" {
 }
 
 resource "aws_scheduler_schedule" "lambda_yfinance_daily_batch" {
-  name = "lambda_yfinance_daily_batch_${local.env}"
+  name = "lambda_yfinance_daily_batch_${var.env}"
   flexible_time_window {
     mode = "OFF"
   }

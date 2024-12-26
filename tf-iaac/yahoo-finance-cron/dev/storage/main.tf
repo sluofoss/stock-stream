@@ -21,7 +21,7 @@ terraform {
     encrypt = true
 
     # unique to this folder (differnent by service)
-    key = "yahoo-finance-cron/terraform.tfstate"
+    key = "yahoo-finance-cron/storage/terraform.tfstate"
   }
 }
 provider "aws" {
@@ -29,6 +29,7 @@ provider "aws" {
 }
 
 module "storage" {
-  source = "../modules/storage/"
+  source = "../../modules/storage/"
   env_name = "dev"
 }
+

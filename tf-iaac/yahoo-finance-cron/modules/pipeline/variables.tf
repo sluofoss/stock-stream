@@ -13,3 +13,8 @@ variable "timezone" {
     description = "timezone which the event scheduler calls in"
     type        = string
 }
+
+variable "env" {
+    description = "which environment this is module is deployed in, should be in dev, staging, prod"
+    type        = string
+}
