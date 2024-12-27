@@ -80,7 +80,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_code_zip" {
   # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
 
   # etag = "${md5(file("path/to/file"))}"
-  source_hash = filemd5("${local.datacron_yfinance_folder}/lambda_cron_code.zip")
+  source_hash = fileexists("${local.datacron_yfinance_folder}/lambda_cron_code.zip")? filemd5("${local.datacron_yfinance_folder}/lambda_cron_code.zip") : ""
   
   depends_on = [null_resource.lambda_yfinance_daily_batch_code_zip]
 }
@@ -94,7 +94,7 @@ resource "aws_s3_object" "lambda_yfinance_daily_batch_layer_zip" {
   # https://stackoverflow.com/questions/54330751/terraform-s3-bucket-objects-etag-keeps-updating-on-each-apply
 
   # etag = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
-  source_hash = filemd5("${local.datacron_yfinance_folder}/requirements.txt") 
+  source_hash = fileexists("${local.datacron_yfinance_folder}/requirements.txt") ? filemd5("${local.datacron_yfinance_folder}/requirements.txt"):"" 
   
   depends_on = [ null_resource.lambda_yfinance_daily_batch_layer_zip ]
 }
@@ -159,7 +159,7 @@ resource "aws_lambda_layer_version" "lambda_yfinance_daily_batch" {
   layer_name    = "lambda_yfinance_daily_batch_${var.env}"
   s3_bucket     = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.bucket
   s3_key        = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.key
-  source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256
+  source_code_hash = "${filebase64sha256("${local.datacron_yfinance_folder}/requirements.txt")}" #aws_s3_object.lambda_yfinance_daily_batch_layer_zip.checksum_sha256
 }
 
 resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
@@ -171,11 +171,11 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   handler       = "awslambda.lambda_get_symbols_data_multi"
 
-  source_code_hash = aws_s3_object.lambda_yfinance_daily_batch_code_zip.checksum_sha256
+  source_code_hash = fileexists("${local.datacron_yfinance_folder}/lambda_cron_code.zip") ? "${filebase64sha256("${local.datacron_yfinance_folder}/lambda_cron_code.zip")}":""#aws_s3_object.lambda_yfinance_daily_batch_code_zip.checksum_sha256
 
   layers        = [aws_lambda_layer_version.lambda_yfinance_daily_batch.arn]
 
-  runtime = "python3.11"
+  runtime = "python3.10"
 
   timeout = 900 # 60*15 seconds, or 15 minutes
 
