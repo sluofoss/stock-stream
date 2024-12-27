@@ -2,6 +2,8 @@
 # Table of content
 
 - [Table of content](#table-of-content)
+- [progress tracking](#progress-tracking)
+- [Project Set up:](#project-set-up)
 - [aws cli set up](#aws-cli-set-up)
 - [aws sso login set up](#aws-sso-login-set-up)
 - [stack setup](#stack-setup)
@@ -10,6 +12,7 @@
 - [random cmd](#random-cmd)
 - [yfinance 1minute asx data size estimate](#yfinance-1minute-asx-data-size-estimate)
 - [TODO:](#todo)
+- [useful commands:](#useful-commands)
 
 # progress tracking
 https://github.com/users/lu0x1a0/projects/1/
@@ -66,3 +69,10 @@ https://askubuntu.com/questions/57603/how-to-list-recursive-file-sizes-of-files-
 - check for correctness of all symbol code info
     - maybe do check by using absence of data over a longer period?
 - introduce logging where all logs are put into 1 file.
+
+# useful commands:
+
+Run this in any terraform root module to visualize the corresponding resource dependencies.
+```
+terraform graph | python -c "import sys; import base64; import zlib; print(base64.urlsafe_b64encode(zlib.compress(sys.stdin.read().encode('utf-8'), 9)).decode('ascii'))" | sed 's/^/ https:\/\/kroki.io\/graphviz\/svg\//'
+```
