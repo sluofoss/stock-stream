@@ -1,9 +1,14 @@
+# data
 *.parquet
+# python
 *.pyc
+pkgs/
+*.zip
 *.log
+# tf
 *.terraform/
 .terraform
 *.tfstate
 *.tfstate.backup
-
+# tmp code
 pipeline_old/
