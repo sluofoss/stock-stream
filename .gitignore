@@ -3,6 +3,7 @@
 # python
 *.pyc
 pkgs/
+lambda_cron_layer/
 *.zip
 *.log
 # tf
