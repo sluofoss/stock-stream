@@ -177,11 +177,15 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 
   runtime = "python3.10"
 
+  memory_size = 1024
+
   timeout = 900 # 60*15 seconds, or 15 minutes
 
   environment {
     variables = {
       foo = "bar"
+      WORKER_NUM = 5
+      #PRINT_DATA_IN_LOG = true
       S3_STORE_BUCKET = var.data_bucket_name
       S3_STORE_PARENT_KEY = "yfinance/min" # TODO: figure out whether this should be hardcoded
       env = var.env
