@@ -57,9 +57,9 @@ resource "null_resource" "lambda_yfinance_daily_batch_layer_zip" {
 
         pip install --target ${local.datacron_yfinance_folder}/lambda_cron_layer/python/ -q -r ${local.datacron_yfinance_folder}/requirements.txt
 
-        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'botocore*' -exec rm -r {} +
-        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'jmespath*' -exec rm -r {} +
-        find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'six*' -exec rm -r {} +
+        # find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'botocore*' -exec rm -r {} +
+        # find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'jmespath*' -exec rm -r {} +
+        # find ${local.datacron_yfinance_folder}/lambda_cron_layer/ -type d -name 'six*' -exec rm -r {} +
 
 	      cd ${local.datacron_yfinance_folder}/lambda_cron_layer/ && zip -r -q ../lambda_cron_layer.zip .
 
