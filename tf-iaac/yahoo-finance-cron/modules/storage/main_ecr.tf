@@ -1,6 +1,6 @@
 # ecr private repo
 resource "aws_ecr_repository" "stock_stream_images" {
-  name                 = "stock_stream_images"
+  name                 = "stock_stream_images-${var.env_name}"
   image_tag_mutability = "MUTABLE"  # or "IMMUTABLE" based on your requirement
   image_scanning_configuration {
     scan_on_push = true
