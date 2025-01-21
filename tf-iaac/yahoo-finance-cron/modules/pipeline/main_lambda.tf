@@ -47,9 +47,9 @@ resource "aws_iam_policy" "lambda_yfinance_daily_batch_s3_upload" {
       {
           Effect =  "Allow",
           Action = [
-              "s3:*"
+              "s3:*Object"
           ]
-          Resource = "arn:aws:s3:::${var.data_bucket_name}"
+          Resource = "arn:aws:s3:::${var.data_bucket_name}/*"
       }
     ]
   })
@@ -67,9 +67,9 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   image_uri     = "${var.ecr_repository_url}:yfinance-cron-aws-slim-latest"
   function_name = "lambda_yfinance_daily_batch_${var.env}" # TODO: Change this to be environment specific
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
-  handler       = "awslambda.lambda_get_symbols_data_multi"
+  #handler       = "awslambda.lambda_get_symbols_data_multi"
 
-  runtime = "python3.12"
+  #runtime = "python3.12"
 
   memory_size = 1024
   package_type = "Image"
