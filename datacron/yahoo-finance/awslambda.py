@@ -20,9 +20,10 @@ import concurrent.futures
 import logging.config
 
 import boto3
+import io
 import yaml
 import yfinance as yf
-
+import pandas as pd
 
 logger = logging.getLogger("lambda")
 logger.info("awslambda.PY is here!!!!")
@@ -58,7 +59,6 @@ def lambda_get_symbols_data_multi(event, context):
     logger.info(f"event:{event}")
     logger.info(f"context:{context}")
 
-    import pandas as pd
 
     df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
     # print(df)
@@ -81,7 +81,8 @@ def lambda_get_symbols_data_multi(event, context):
 
     get_symbols_data_multi(
         symbols,
-        max_worker=50,
+        max_worker=int(os.getenv('WORKER_NUM', 50)),
+        print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
         local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
         s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
         s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
@@ -100,7 +101,6 @@ def lambda_check_symbols_info_multi(event, context):
     logger.info(event)
     logger.info(context)
 
-    import pandas as pd
 
     df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
     # print(df)
@@ -154,12 +154,35 @@ def get_symbols_data_multi(
                     ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
-                    data.to_parquet(
-                        # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                        f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                        compression="gzip",
+                    boto_save_csv(
+                        data,
+                        boto3.client("s3"),
+                        s3_save_bucket,
+                        f"{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet"
                     )
+                    #data.to_parquet(
+                    #    # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
+                    #    f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
+                    #    #compression="gzip",
+                    #)
 
+def boto_save_csv(df, s3_client, s3_bucket, s3_key):
+    logger.info("enter my boto func")
+    with io.StringIO() as csv_buffer:
+        df.to_csv(csv_buffer, index=False)
+        logger.info("to csv buffer done")
+
+        response = s3_client.put_object(
+            Bucket=s3_bucket, Key=s3_key, Body=csv_buffer.getvalue()
+        )
+        logger.info("put to s3")
+
+        status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+
+        if status == 200:
+            print(f"Successful S3 put_object response. Status - {status}")
+        else:
+            print(f"Unsuccessful S3 put_object response. Status - {status}")
 
 def check_symbols_info_multi(symbols, max_worker=10, print_data=False):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:

@@ -39,7 +39,8 @@ For each environment in `state_store/`:
 
 For each environment in `yahoo-finance-cron/`
    For each in `[data_store, vpc, pipeline]`
-         1. `terraform init`, `terraform apply` 
+         1. `terraform init`, `terraform apply`
+         2. if data_store then also create_artifacts.sh
 ```
 > [!NOTE] 
 for any change to `data_store` and `vpc`, `pipeline` needs to `terraform init` again.
