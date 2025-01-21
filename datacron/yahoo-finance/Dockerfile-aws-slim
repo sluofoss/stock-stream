@@ -11,11 +11,6 @@ RUN mkdir -p ${FUNCTION_DIR}
 
 COPY requirements-cntnr.txt ${FUNCTION_DIR}
 
-COPY awslambda.py ${FUNCTION_DIR}
-COPY ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv ${FUNCTION_DIR}
-COPY logconfig_aws.yaml ${FUNCTION_DIR}
-COPY logconfig.yaml ${FUNCTION_DIR}
-
 
 # Install the function's dependencies
 RUN pip install \
@@ -24,7 +19,7 @@ RUN pip install \
     --prefer-binary --compile --no-cache-dir
 
 # Use a slim version of the base Python image to reduce the final image size
-FROM python:3.12-slim
+FROM python:3.12-slim AS final_stage
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
@@ -33,6 +28,12 @@ WORKDIR ${FUNCTION_DIR}
 
 # Copy in the built dependencies
 COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
+
+# copy the code
+COPY awslambda.py ${FUNCTION_DIR}
+COPY ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv ${FUNCTION_DIR}
+COPY logconfig_aws.yaml ${FUNCTION_DIR}
+COPY logconfig.yaml ${FUNCTION_DIR}
 
 # Set runtime interface client as default command for the container runtime
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]
