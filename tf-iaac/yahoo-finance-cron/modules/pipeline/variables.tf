@@ -19,3 +19,8 @@ variable "env" {
     description = "which environment this is module is deployed in, should be in dev, staging, prod"
     type        = string
 }
+
+variable "ecr_repository_url" {
+    description = "ecr repo for this environment"
+    type        = string
+}
