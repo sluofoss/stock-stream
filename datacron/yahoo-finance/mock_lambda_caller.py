@@ -15,7 +15,7 @@ if __name__ == "__main__":
     
     from awslambda import lambda_get_symbols_data_multi, lambda_check_symbols_info_multi
     
-    event = {"time": "2024-12-17T08:12:00Z"}
+    event = {"time": "2025-01-22T08:12:00Z"}
     context = None
     lambda_get_symbols_data_multi(event, context)
     # lambda_check_symbols_info_multi(event, context)

@@ -79,7 +79,7 @@ def lambda_get_symbols_data_multi(event, context):
     else:
         yf_hist_args = json.loads(os.getenv("YF_HIST_ARG"))
 
-    get_symbols_data_multi(
+    get_symbols_data_multi_combined(
         symbols,
         max_worker=int(os.getenv('WORKER_NUM', 50)),
         print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
@@ -108,6 +108,27 @@ def lambda_check_symbols_info_multi(event, context):
 
     check_symbols_info_multi(symbols, max_worker=50, print_data=True)
 
+
+def get_symbols_data_multi_combined(
+    symbols,
+    max_worker=10,
+    print_data=False,
+    local_save_path: str = None,
+    s3_save_bucket: str = None,
+    s3_parent_key: str = None,
+    yf_hist_args: dict = {"interval": "1m"},
+):
+    try:
+        data = yf.Tickers(symbols).history(**yf_hist_args), 
+    except Exception as exc:
+        logger.error(f"combined run generated an exception: {exc}")
+    else:
+        print(data)
+        data.to_parquet(
+            # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
+            f"./temp_agg_store.parquet",
+            compression="gzip",
+        )
 
 def get_symbols_data_multi(
     symbols,
