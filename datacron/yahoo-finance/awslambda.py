@@ -19,7 +19,7 @@ import os, json, datetime, sys
 import concurrent.futures
 import logging.config
 
-import boto3
+#import boto3
 import io
 import yaml
 import yfinance as yf
@@ -154,17 +154,17 @@ def get_symbols_data_multi(
                     ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
-                    boto_save_csv(
-                        data,
-                        boto3.client("s3"),
-                        s3_save_bucket,
-                        f"{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet"
-                    )
-                    #data.to_parquet(
-                    #    # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                    #    f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                    #    #compression="gzip",
+                    #boto_save_csv(
+                    #    data,
+                    #    boto3.client("s3"),
+                    #    s3_save_bucket,
+                    #    f"{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet"
                     #)
+                    data.to_parquet(
+                        # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
+                        f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
+                        #compression="gzip",
+                    )
 
 def boto_save_csv(df, s3_client, s3_bucket, s3_key):
     logger.info("enter my boto func")
