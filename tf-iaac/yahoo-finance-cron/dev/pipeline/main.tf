@@ -34,4 +34,5 @@ module "pipeline" {
   code_bucket_name    = data.terraform_remote_state.storage.outputs.s3_bucket_id
   data_bucket_name    = data.terraform_remote_state.storage.outputs.s3_bucket_id
   ecr_repository_url  = data.terraform_remote_state.storage.outputs.ecr_repository_url
+  sns_failure_email   = var.sns_failure_email
 }

@@ -24,3 +24,9 @@ variable "ecr_repository_url" {
     description = "ecr repo for this environment"
     type        = string
 }
+
+
+variable "sns_failure_email" {
+    description = "email location for sns failure"
+    type        = string
+}

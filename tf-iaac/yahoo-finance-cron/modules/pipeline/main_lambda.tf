@@ -169,3 +169,29 @@ resource "aws_lambda_permission" "lambda_yfinance_daily_batch_scheduler" {
   }
 }
 */
+
+
+#############################
+##
+##  Failure SNS
+##
+#############################
+resource "aws_sns_topic" "lambda_yfinance_daily_batch_failure" {
+  name = "lambda_yfinance_daily_batch_failure_${var.env}"
+}
+
+resource "aws_lambda_function_event_invoke_config" "example" {
+  function_name = aws_lambda_function.lambda_yfinance_daily_batch.function_name
+
+  destination_config {
+    on_failure {
+      destination = aws_sns_topic.lambda_yfinance_daily_batch_failure.arn
+    }
+  }
+}
+
+resource "aws_sns_topic_subscription" "lambda_yfinance_daily_batch_failure" {
+  topic_arn = aws_sns_topic.lambda_yfinance_daily_batch_failure.arn
+  protocol  = "email"
+  endpoint  = var.sns_failure_email
+}
