@@ -15,7 +15,7 @@ Env Var:
     S3_STORE_PARENT_KEY:
         [Optional] root key in s3 bucket to store result.
 """
-import os, json, datetime, sys
+import os, json, datetime, sys, time
 import concurrent.futures
 import logging.config
 
@@ -62,7 +62,9 @@ def lambda_get_symbols_data_multi(event, context):
 
     df = pd.read_csv("./ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv")
     # print(df)
-    symbols = [x + ".AX" for x in df["ASX code"]]
+    df['Market Cap'] = df['Market Cap'].apply(lambda v: None if v in ("SUSPENDED", "--") else int(v))
+    dfvalid = df.sort_values(by="Market Cap", ascending=False)[~df["Market Cap"].isna()]
+    symbols = [x + ".AX" for x in dfvalid["ASX code"]]
 
     # Event time looks like 2024-01-26T08:12:00Z
     # TODO: decide whether need to adjust this for other markets deployed in other aws regions
@@ -82,15 +84,22 @@ def lambda_get_symbols_data_multi(event, context):
         yf_hist_args = json.loads(os.getenv("YF_HIST_ARG"))
         yf_hist_args['start'] = yf_hist_args.get('start',datetime.date.today())
 
-    get_symbols_data_multi_combined(
-        symbols,
-        max_worker=int(os.getenv('WORKER_NUM', 50)),
-        print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
-        local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
-        s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
-        s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
-        yf_hist_args=yf_hist_args,
-    )
+    batch_size = 400
+    for batch_ix in range(0,len(df),batch_size):
+        if batch_ix != 0:
+            print("start hibernate")
+            time.sleep(120)
+        get_symbols_data_multi_combined(
+            symbols[batch_ix:batch_ix+batch_size],
+            max_worker=int(os.getenv('WORKER_NUM', 50)),
+            print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
+            local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
+            s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
+            s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
+            yf_hist_args=yf_hist_args,
+            batch=int(batch_ix/batch_size)
+        )
+        
 
 
 def lambda_check_symbols_info_multi(event, context):
@@ -120,6 +129,7 @@ def get_symbols_data_multi_combined(
     s3_save_bucket: str = None,
     s3_parent_key: str = None,
     yf_hist_args: dict = {"interval": "1m"}, #TODO doesnt work on its own right now
+    batch: int = 0
 ):
     # this method stores all the tickers inside 1 folder for ease of sql querying with athena and spark.
     print("yfinance param")
@@ -130,11 +140,12 @@ def get_symbols_data_multi_combined(
     except Exception as exc:
         logger.error(f"combined run generated an exception: {exc}")
     else:
-        print(data)
-        print(type(data[0]))
-    
-        data = data[0].stack(level=1).reset_index()
         
+        data = data[0].stack(level=1).reset_index()
+    
+        print(data)
+        print(type(data))
+    
         if data.isnull().all(axis=1).all():
             raise ValueError("The DataFrame contains only rows with null values.")
     
@@ -143,13 +154,13 @@ def get_symbols_data_multi_combined(
             if not os.path.exists(f"./{local_save_path}/"):
                 os.makedirs(f"./{local_save_path}/")
             data.to_parquet(
-                f"./{local_save_path}/{yf_hist_args['start']}.parquet",
+                f"./{local_save_path}/{yf_hist_args['start']}_{batch}.parquet",
                 #compression="gzip", snappy better for read, gzip for cold data
             )
         if s3_save_bucket:
             logger.info(f"{yf_hist_args['start']}: Saving to s3")
             data.to_parquet(
-                f"s3://{s3_save_bucket}/{s3_parent_key}/{yf_hist_args['start']}.parquet",
+                f"s3://{s3_save_bucket}/{s3_parent_key}/{yf_hist_args['start']}_{batch}.parquet",
             )
 
 def get_symbols_data_multi(
