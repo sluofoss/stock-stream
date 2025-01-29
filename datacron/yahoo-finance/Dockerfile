@@ -16,7 +16,7 @@ RUN pip install -r requirements.txt
 RUN pip install -r requirements-dev.txt
 
 COPY awslambda.py ${LAMBDA_TASK_ROOT}
-COPY ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv ${LAMBDA_TASK_ROOT}
+COPY ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv ${LAMBDA_TASK_ROOT}
 COPY logconfig_aws.yaml ${LAMBDA_TASK_ROOT}
 COPY logconfig.yaml ${LAMBDA_TASK_ROOT}
 

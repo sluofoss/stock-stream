@@ -16,7 +16,7 @@ RUN mkdir -p ${FUNCTION_DIR}
 COPY requirements-cntnr.txt ${FUNCTION_DIR}
 
 COPY awslambda.py ${FUNCTION_DIR}
-COPY ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv ${FUNCTION_DIR}
+COPY ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv ${FUNCTION_DIR}
 COPY logconfig_aws.yaml ${FUNCTION_DIR}
 COPY logconfig.yaml ${FUNCTION_DIR}
 

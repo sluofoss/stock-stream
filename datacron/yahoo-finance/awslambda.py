@@ -60,7 +60,7 @@ def lambda_get_symbols_data_multi(event, context):
     logger.info(f"context:{context}")
 
 
-    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
+    df = pd.read_csv("./ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv")
     # print(df)
     symbols = [x + ".AX" for x in df["ASX code"]]
 
@@ -105,7 +105,7 @@ def lambda_check_symbols_info_multi(event, context):
     logger.info(context)
 
 
-    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
+    df = pd.read_csv("./ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv")
     # print(df)
     symbols = [x + ".AX" for x in df["ASX code"]]
 

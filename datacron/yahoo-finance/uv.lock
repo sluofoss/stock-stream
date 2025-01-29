@@ -190,6 +190,21 @@ wheels = [
 ]
 
 [[package]]
+name = "awslogs"
+version = "0.15.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "boto3" },
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "termcolor" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/15/f5/8f3bd0f4a927b1fbb3a5e6a5b036f29e4263977fb167b301bc4a5f4db2b9/awslogs-0.15.0.tar.gz", hash = "sha256:19f223bb1c0703cea0689d94b1d293006529095e6ab8971f6b52289a2e545dd5", size = 16841 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/7b/f4d4ad70a1d6cfc27c88ffd3e76d34f7d517902f77a62254e8924f865362/awslogs-0.15.0-py2.py3-none-any.whl", hash = "sha256:c147e50ce81b01ac757318a2466e1a11033e30973a798bbb31baa27abb69f31f", size = 10125 },
+]
+
+[[package]]
 name = "babel"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1830,6 +1845,15 @@ wheels = [
 ]
 
 [[package]]
+name = "termcolor"
+version = "2.5.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/37/72/88311445fd44c455c7d553e61f95412cf89054308a1aa2434ab835075fc5/termcolor-2.5.0.tar.gz", hash = "sha256:998d8d27da6d48442e8e1f016119076b690d962507531df4890fcd2db2ef8a6f", size = 13057 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7f/be/df630c387a0a054815d60be6a97eb4e8f17385d5d6fe660e1c02750062b4/termcolor-2.5.0-py3-none-any.whl", hash = "sha256:37b17b5fc1e604945c2642c872a3764b5d547a48009871aea3edd3afa180afb8", size = 7755 },
+]
+
+[[package]]
 name = "terminado"
 version = "0.18.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2081,6 +2105,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "awslogs" },
     { name = "black" },
     { name = "boto3" },
     { name = "duckdb" },
@@ -2101,6 +2126,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "awslogs", specifier = ">=0.15.0" },
     { name = "black", specifier = ">=24.10.0" },
     { name = "boto3", specifier = ">=1.35.81" },
     { name = "duckdb", specifier = ">=1.1.3" },

@@ -31,7 +31,7 @@ COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
 
 # copy the code
 COPY awslambda.py ${FUNCTION_DIR}
-COPY ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv ${FUNCTION_DIR}
+COPY ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv ${FUNCTION_DIR}
 COPY logconfig_aws.yaml ${FUNCTION_DIR}
 COPY logconfig.yaml ${FUNCTION_DIR}
 
