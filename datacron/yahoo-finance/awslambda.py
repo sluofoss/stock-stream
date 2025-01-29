@@ -75,9 +75,12 @@ def lambda_get_symbols_data_multi(event, context):
     
     # TODO: add with try except
     if os.getenv("YF_HIST_ARG") is None:
+        # lambda event with predefined interval
         yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"}
     else:
+        # custom load 
         yf_hist_args = json.loads(os.getenv("YF_HIST_ARG"))
+        yf_hist_args['start'] = yf_hist_args.get('start',datetime.date.today())
 
     get_symbols_data_multi_combined(
         symbols,
@@ -116,19 +119,38 @@ def get_symbols_data_multi_combined(
     local_save_path: str = None,
     s3_save_bucket: str = None,
     s3_parent_key: str = None,
-    yf_hist_args: dict = {"interval": "1m"},
+    yf_hist_args: dict = {"interval": "1m"}, #TODO doesnt work on its own right now
 ):
+    # this method stores all the tickers inside 1 folder for ease of sql querying with athena and spark.
+    print("yfinance param")
+    print(yf_hist_args)
     try:
+        #['CBA.AX','WOW.AX']
         data = yf.Tickers(symbols).history(**yf_hist_args), 
     except Exception as exc:
         logger.error(f"combined run generated an exception: {exc}")
     else:
         print(data)
-        data.to_parquet(
-            # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-            f"./temp_agg_store.parquet",
-            compression="gzip",
-        )
+        print(type(data[0]))
+    
+        data = data[0].stack(level=1).reset_index()
+        
+        if data.isnull().all(axis=1).all():
+            raise ValueError("The DataFrame contains only rows with null values.")
+    
+        if local_save_path:
+            logger.info(f"{yf_hist_args['start']}:Saving to local")
+            if not os.path.exists(f"./{local_save_path}/"):
+                os.makedirs(f"./{local_save_path}/")
+            data.to_parquet(
+                f"./{local_save_path}/{yf_hist_args['start']}.parquet",
+                #compression="gzip", snappy better for read, gzip for cold data
+            )
+        if s3_save_bucket:
+            logger.info(f"{yf_hist_args['start']}: Saving to s3")
+            data.to_parquet(
+                f"s3://{s3_save_bucket}/{s3_parent_key}/{yf_hist_args['start']}.parquet",
+            )
 
 def get_symbols_data_multi(
     symbols,
@@ -169,22 +191,12 @@ def get_symbols_data_multi(
                     if not os.path.exists(f"./{local_save_path}/{symbol}/"):
                         os.makedirs(f"./{local_save_path}/{symbol}/")
                     data.to_parquet(
-                        # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                        f"./{local_save_path}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                        compression="gzip",
-                    ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
+                        f"./{local_save_path}/{symbol}/{yf_hist_args['start']}.parquet",
+                    )
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
-                    #boto_save_csv(
-                    #    data,
-                    #    boto3.client("s3"),
-                    #    s3_save_bucket,
-                    #    f"{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet"
-                    #)
                     data.to_parquet(
-                        # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                        f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                        #compression="gzip",
+                        f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args['start']}.parquet",
                     )
 
 def boto_save_csv(df, s3_client, s3_bucket, s3_key):
