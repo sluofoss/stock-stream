@@ -88,7 +88,7 @@ def lambda_get_symbols_data_multi(event, context):
     for batch_ix in range(0,len(df),batch_size):
         if batch_ix != 0:
             print("start hibernate")
-            time.sleep(120)
+            time.sleep(90)
         get_symbols_data_multi_combined(
             symbols[batch_ix:batch_ix+batch_size],
             max_worker=int(os.getenv('WORKER_NUM', 50)),
