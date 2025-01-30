@@ -1,5 +1,5 @@
 build-image:
-	docker build -f Dockerfile-aws-slim --target final_stage --platform linux/arm64 -t yfinance-cron:aws-slim-r1 .
+	docker build -f Dockerfile-aws-slim --target final_stage -t yfinance-cron:aws-slim-r1 .
 
 upload-aws-lambda-image:build-image
 	export AWS_ACCOUNT_ID=$$(aws sts get-caller-identity --query Account --output text); \
@@ -11,7 +11,7 @@ upload-aws-lambda-image:build-image
 	
 test-image:build-image
 	aws sts get-session-token | jq -r '.Credentials | ["AWS_ACCESS_KEY_ID=" + .AccessKeyId, "AWS_SECRET_ACCESS_KEY=" + .SecretAccessKey, "AWS_SESSION_TOKEN=" + .SessionToken] | .[]' > cred.env
-	docker run --platform linux/arm64 -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
+	docker run -d -v ~/.aws-lambda-rie:/aws-lambda -p 9000:8080 \
     --entrypoint /aws-lambda/aws-lambda-rie \
     --env-file cred.env \
     --env-file local.env \
