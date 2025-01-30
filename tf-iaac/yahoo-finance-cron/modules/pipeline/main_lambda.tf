@@ -71,6 +71,7 @@ resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
 
   #image_uri     = "${var.ecr_repository_url}:yfinance-cron-aws-slim-latest"
   image_uri     = "${var.ecr_repository_url}@${data.aws_ecr_image.repo_image.id}"
+  architectures = ["x86_64"]
   function_name = "lambda_yfinance_daily_batch_${var.env}" # TODO: Change this to be environment specific
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   #handler       = "awslambda.lambda_get_symbols_data_multi"
