@@ -1,7 +1,11 @@
 # Define custom function directory
 ARG FUNCTION_DIR="/function"
 
-FROM python:3.12 AS build-image
+FROM python:3.12-alpine AS build-image
+RUN echo https://dl-cdn.alpinelinux.org/alpine/v3.19/main >> /etc/apk/repositories
+RUN echo https://dl-cdn.alpinelinux.org/alpine/v3.19/community >> /etc/apk/repositories
+
+RUN apk add autoconf=2.71-r2 automake bash binutils cmake g++ gcc libtool make
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
@@ -11,6 +15,11 @@ RUN mkdir -p ${FUNCTION_DIR}
 
 COPY requirements-cntnr.txt ${FUNCTION_DIR}
 
+COPY awslambda.py ${FUNCTION_DIR}
+COPY ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv ${FUNCTION_DIR}
+COPY logconfig_aws.yaml ${FUNCTION_DIR}
+COPY logconfig.yaml ${FUNCTION_DIR}
+
 
 # Install the function's dependencies
 RUN pip install \
@@ -19,7 +28,7 @@ RUN pip install \
     --prefer-binary --compile --no-cache-dir
 
 # Use a slim version of the base Python image to reduce the final image size
-FROM python:3.12-slim AS final_stage
+FROM python:3.12-alpine
 
 # Include global arg in this stage of the build
 ARG FUNCTION_DIR
@@ -28,12 +37,6 @@ WORKDIR ${FUNCTION_DIR}
 
 # Copy in the built dependencies
 COPY --from=build-image ${FUNCTION_DIR} ${FUNCTION_DIR}
-
-# copy the code
-COPY awslambda.py ${FUNCTION_DIR}
-COPY ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv ${FUNCTION_DIR}
-COPY logconfig_aws.yaml ${FUNCTION_DIR}
-COPY logconfig.yaml ${FUNCTION_DIR}
 
 # Set runtime interface client as default command for the container runtime
 ENTRYPOINT [ "/usr/local/bin/python", "-m", "awslambdaric" ]

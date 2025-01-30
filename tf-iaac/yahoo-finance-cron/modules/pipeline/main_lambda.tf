@@ -60,11 +60,18 @@ resource "aws_iam_role_policy_attachment" "lambda_yfinance_daily_batch_s3_upload
   policy_arn = aws_iam_policy.lambda_yfinance_daily_batch_s3_upload.arn
 }
 
+data "aws_ecr_image" "repo_image" {
+  repository_name = "${var.ecr_repository_name}"
+  image_tag = "yfinance-cron-aws-slim-latest"
+  #most_recent     = true
+}
 resource "aws_lambda_function" "lambda_yfinance_daily_batch" {
   # If the file is not in the current working directory you will need to include a
   # path.module in the filename.
 
-  image_uri     = "${var.ecr_repository_url}:yfinance-cron-aws-slim-latest"
+  #image_uri     = "${var.ecr_repository_url}:yfinance-cron-aws-slim-latest"
+  image_uri     = "${var.ecr_repository_url}@${data.aws_ecr_image.repo_image.id}"
+  architectures = ["x86_64"]
   function_name = "lambda_yfinance_daily_batch_${var.env}" # TODO: Change this to be environment specific
   role          = aws_iam_role.lambda_yfinance_daily_batch.arn
   #handler       = "awslambda.lambda_get_symbols_data_multi"
@@ -169,3 +176,50 @@ resource "aws_lambda_permission" "lambda_yfinance_daily_batch_scheduler" {
   }
 }
 */
+
+
+#############################
+##
+##  Failure SNS
+##
+#############################
+resource "aws_sns_topic" "lambda_yfinance_daily_batch_failure" {
+  name = "lambda_yfinance_daily_batch_failure_${var.env}"
+}
+
+resource "aws_lambda_function_event_invoke_config" "example" {
+  function_name = aws_lambda_function.lambda_yfinance_daily_batch.function_name
+
+  destination_config {
+    on_failure {
+      destination = aws_sns_topic.lambda_yfinance_daily_batch_failure.arn
+    }
+  }
+}
+
+resource "aws_sns_topic_subscription" "lambda_yfinance_daily_batch_failure" {
+  topic_arn = aws_sns_topic.lambda_yfinance_daily_batch_failure.arn
+  protocol  = "email"
+  endpoint  = var.sns_failure_email
+}
+
+
+data "aws_iam_policy_document" "grant_lambda_publish_error" {
+  statement {
+    effect = "Allow"
+    actions = ["sns:Publish"]
+    resources = [aws_sns_topic.lambda_yfinance_daily_batch_failure.arn]
+    #resources = ["arn:aws:sns:your-region:your-account-id:your-topic-name"]
+  }
+}
+
+resource "aws_iam_policy" "grant_lambda_publish_error" {
+  name        = "grant_lambda_publish_error"
+  description = "allow yfinance lambda to create error message to SNS"
+  policy      = data.aws_iam_policy_document.grant_lambda_publish_error.json
+}
+
+resource "aws_iam_role_policy_attachment" "grant_lambda_publish_error_attach" {
+  role       = aws_iam_role.lambda_yfinance_daily_batch.name
+  policy_arn = aws_iam_policy.grant_lambda_publish_error.arn
+}

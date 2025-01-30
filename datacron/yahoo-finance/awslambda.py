@@ -15,11 +15,11 @@ Env Var:
     S3_STORE_PARENT_KEY:
         [Optional] root key in s3 bucket to store result.
 """
-import os, json, datetime, sys
+import os, json, datetime, sys, time
 import concurrent.futures
 import logging.config
 
-import boto3
+#import boto3
 import io
 import yaml
 import yfinance as yf
@@ -60,9 +60,11 @@ def lambda_get_symbols_data_multi(event, context):
     logger.info(f"context:{context}")
 
 
-    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
+    df = pd.read_csv("./ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv")
     # print(df)
-    symbols = [x + ".AX" for x in df["ASX code"]]
+    df['Market Cap'] = df['Market Cap'].apply(lambda v: None if v in ("SUSPENDED", "--") else int(v))
+    dfvalid = df.sort_values(by="Market Cap", ascending=False)[~df["Market Cap"].isna()]
+    symbols = [x + ".AX" for x in dfvalid["ASX code"]]
 
     # Event time looks like 2024-01-26T08:12:00Z
     # TODO: decide whether need to adjust this for other markets deployed in other aws regions
@@ -75,19 +77,29 @@ def lambda_get_symbols_data_multi(event, context):
     
     # TODO: add with try except
     if os.getenv("YF_HIST_ARG") is None:
+        # lambda event with predefined interval
         yf_hist_args = {"start": start_date, "end": next_day, "interval": "1m"}
     else:
+        # custom load 
         yf_hist_args = json.loads(os.getenv("YF_HIST_ARG"))
+        yf_hist_args['start'] = yf_hist_args.get('start',datetime.date.today())
 
-    get_symbols_data_multi(
-        symbols,
-        max_worker=int(os.getenv('WORKER_NUM', 50)),
-        print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
-        local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
-        s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
-        s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
-        yf_hist_args=yf_hist_args,
-    )
+    batch_size = 400
+    for batch_ix in range(0,len(df),batch_size):
+        if batch_ix != 0:
+            print("start hibernate")
+            time.sleep(90)
+        get_symbols_data_multi_combined(
+            symbols[batch_ix:batch_ix+batch_size],
+            max_worker=int(os.getenv('WORKER_NUM', 50)),
+            print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
+            local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
+            s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
+            s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
+            yf_hist_args=yf_hist_args,
+            batch=int(batch_ix/batch_size)
+        )
+        
 
 
 def lambda_check_symbols_info_multi(event, context):
@@ -102,12 +114,54 @@ def lambda_check_symbols_info_multi(event, context):
     logger.info(context)
 
 
-    df = pd.read_csv("./ASX_Listed_Companies_17-12-2023_01-39-05_AEDT.csv")
+    df = pd.read_csv("./ASX_Listed_Companies_30-01-2025_02-54-26_AEDT.csv")
     # print(df)
     symbols = [x + ".AX" for x in df["ASX code"]]
 
     check_symbols_info_multi(symbols, max_worker=50, print_data=True)
 
+
+def get_symbols_data_multi_combined(
+    symbols,
+    max_worker=10,
+    print_data=False,
+    local_save_path: str = None,
+    s3_save_bucket: str = None,
+    s3_parent_key: str = None,
+    yf_hist_args: dict = {"interval": "1m"}, #TODO doesnt work on its own right now
+    batch: int = 0
+):
+    # this method stores all the tickers inside 1 folder for ease of sql querying with athena and spark.
+    print("yfinance param")
+    print(yf_hist_args)
+    try:
+        #['CBA.AX','WOW.AX']
+        data = yf.Tickers(symbols).history(**yf_hist_args), 
+    except Exception as exc:
+        logger.error(f"combined run generated an exception: {exc}")
+    else:
+        
+        data = data[0].stack(level=1).reset_index()
+    
+        print(data)
+        print(type(data))
+    
+        if data.isnull().all(axis=1).all():
+            raise ValueError("The DataFrame contains only rows with null values.")
+    
+        if local_save_path:
+            logger.info(f"{yf_hist_args['start']}:Saving to local")
+            if not os.path.exists(f"./{local_save_path}/"):
+                os.makedirs(f"./{local_save_path}/")
+            data.to_parquet(
+                f"./{local_save_path}/{yf_hist_args['start']}_{batch}.parquet",
+                #compression="gzip", snappy better for read, gzip for cold data
+            )
+        if s3_save_bucket:
+            logger.info(f"{yf_hist_args['start']}: Saving to s3")
+            data.to_parquet(
+                f"s3://{s3_save_bucket}/{s3_parent_key}/{yf_hist_args['start']}_{batch}.parquet",
+            )
 
 def get_symbols_data_multi(
     symbols,
@@ -148,23 +202,13 @@ def get_symbols_data_multi(
                     if not os.path.exists(f"./{local_save_path}/{symbol}/"):
                         os.makedirs(f"./{local_save_path}/{symbol}/")
                     data.to_parquet(
-                        # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                        f"./{local_save_path}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                        compression="gzip",
-                    ) # TODO: maybe its not good idea for stateful info like datetime.date.today() to be defined in function?
+                        f"./{local_save_path}/{symbol}/{yf_hist_args['start']}.parquet",
+                    )
                 if s3_save_bucket:
                     logger.info(f"{symbol}: Saving to s3")
-                    boto_save_csv(
-                        data,
-                        boto3.client("s3"),
-                        s3_save_bucket,
-                        f"{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet"
+                    data.to_parquet(
+                        f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args['start']}.parquet",
                     )
-                    #data.to_parquet(
-                    #    # f"./mocks3yfinance/{symbol}/{exec_date}.parquet.gzip"
-                    #    f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args.get('start',datetime.date.today())}.parquet",
-                    #    #compression="gzip",
-                    #)
 
 def boto_save_csv(df, s3_client, s3_bucket, s3_key):
     logger.info("enter my boto func")
