@@ -93,7 +93,7 @@ def lambda_get_symbols_data_multi(event, context):
             symbols[batch_ix:batch_ix+batch_size],
             max_worker=int(os.getenv('WORKER_NUM', 50)),
             print_data=bool(os.getenv('PRINT_DATA_IN_LOG', False)),
-            local_save_path=os.getenv("LOCAL_SAVE_PATH"),  # TODO: remove this
+            local_save_path=os.getenv("LOCAL_SAVE_PATH"),  
             s3_save_bucket=os.getenv("S3_STORE_BUCKET"),
             s3_parent_key=os.getenv("S3_STORE_PARENT_KEY"),
             yf_hist_args=yf_hist_args,
