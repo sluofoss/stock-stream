@@ -16,3 +16,7 @@ pipeline_old/
 
 #cred
 cred.env
+
+#packages
+ta-lib/
+*.gz
