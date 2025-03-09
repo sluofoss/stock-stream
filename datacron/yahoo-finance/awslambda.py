@@ -171,6 +171,7 @@ def get_symbols_data_multi(
     s3_save_bucket: str = None,
     s3_parent_key: str = None,
     yf_hist_args: dict = {"interval": "1m"},
+    symbol_info: bool = False
 ):
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_worker) as executor:
         logger.info(f"yfinance receiving arguments: {yf_hist_args}")
@@ -209,6 +210,14 @@ def get_symbols_data_multi(
                     data.to_parquet(
                         f"s3://{s3_save_bucket}/{s3_parent_key}/{symbol}/{yf_hist_args['start']}.parquet",
                     )
+        
+        if symbol_info:
+            future_to_symbol = {
+                executor.submit(
+                    lambda : yf.Ticker(symbol).info
+                ): symbol
+                for symbol in symbols
+            }
 
 def boto_save_csv(df, s3_client, s3_bucket, s3_key):
     logger.info("enter my boto func")
