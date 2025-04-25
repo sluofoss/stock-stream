@@ -9,6 +9,7 @@
 - [stack setup](#stack-setup)
 - [](#)
 - [explain logic:](#explain-logic)
+  - [new logic](#new-logic)
 - [random cmd](#random-cmd)
 - [yfinance 1minute asx data size estimate](#yfinance-1minute-asx-data-size-estimate)
 - [TODO:](#todo)
@@ -41,8 +42,20 @@ flowchart
         aws
         mock
     end
-    lambda_caller --> id1["awwlambda.getdatabydate(symbols, event_time)"] --> s3_bucket
+    lambda_caller --> id1["awslambda.getdatabydate(symbols, event_time)"] --> s3_bucket
 ```
+## new logic 
+```mermaid
+flowchart
+    subgraph lambda_caller
+        aws
+        mock
+    end
+    lambda_caller --> id1["awslambda.get_symbols"] --"emit batch"--> sqs --> id2["awslambda.getdatabydateandsymbol"] --> s3_bucket
+    id1 --> sqs
+    sqs --> id2
+```
+
 
 # random cmd
 - check the file size under folder
